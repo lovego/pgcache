@@ -18,12 +18,11 @@ func TestNotifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(100 * time.Millisecond) // ensure listener has started
 
 	testTable(notifier, db, `pgnotify_t1`, t)
 	testTable(notifier, db, `pgnotify_t2`, t)
 
-	time.Sleep(50 * time.Millisecond) // ensure event has reached
+	time.Sleep(100 * time.Millisecond) // ensure event has reached
 }
 
 func testTable(notifier *Notifier, db *pg.DB, table string, t *testing.T) {
@@ -38,6 +37,7 @@ func testTable(notifier *Notifier, db *pg.DB, table string, t *testing.T) {
 	if err := notifier.Notify(table, testListener{}); err != nil {
 		t.Fatal(err)
 	}
+	time.Sleep(100 * time.Millisecond) // ensure listen loop has started
 
 	if _, err := db.Exec(`insert into ? (name, time) values ('李雷', now())`, tbl); err != nil {
 		t.Fatal(err)
