@@ -28,9 +28,10 @@ func TestNotifier(t *testing.T) {
 func testTable(notifier *Notifier, db *pg.DB, table string, t *testing.T) {
 	var tbl = pg.Q(table)
 	if _, err := db.Exec(`
+	drop table if exists ?;
 	create table if not exists ? (
 		id bigserial, name varchar(100), time timestamptz
-	)`, tbl); err != nil {
+	)`, tbl, tbl); err != nil {
 		t.Fatal(err)
 	}
 
