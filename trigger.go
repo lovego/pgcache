@@ -31,7 +31,7 @@ func CreateTriggerIfNotExists(db *pg.DB, table string) error {
 	}
 	if count <= 0 {
 		if _, err := db.Exec(
-			`create trigger ?_pgnotify after insert or update or delete or truncate on ?
+			`create trigger ?_pgnotify after insert or update or delete on ?
 			for each row execute procedure pgnotify()`,
 			pg.Q(table), pg.Q(table),
 		); err != nil {
