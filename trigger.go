@@ -12,8 +12,10 @@ func CreateFunction(db *pg.DB) error {
 	); err != nil {
 		return errs.Trace(err)
 	}
-	if count <= 0 {
-		if _, err := db.Exec(`create or replace function pgnotify() returns trigger as $$
+	if count > 0 {
+		return nil
+	}
+	if _, err := db.Exec(`create or replace function pgnotify() returns trigger as $$
 	begin
 		perform pg_notify('pgnotify_' || tg_table_name, json_build_object(
 			'action', tg_op,
@@ -22,8 +24,7 @@ func CreateFunction(db *pg.DB) error {
 		return null;
 	end;
 $$ language plpgsql`); err != nil {
-			return errs.Trace(err)
-		}
+		return errs.Trace(err)
 	}
 	return nil
 }
@@ -37,14 +38,15 @@ func CreateTriggerIfNotExists(db *pg.DB, table string) error {
 	); err != nil {
 		return errs.Trace(err)
 	}
-	if count <= 0 {
-		if _, err := db.Exec(
-			`create trigger ?_pgnotify after insert or update or delete on ?
+	if count > 0 {
+		return nil
+	}
+	if _, err := db.Exec(
+		`create trigger ?_pgnotify after insert or update or delete on ?
 			for each row execute procedure pgnotify()`,
-			pg.Q(table), pg.Q(table),
-		); err != nil {
-			return errs.Trace(err)
-		}
+		pg.Q(table), pg.Q(table),
+	); err != nil {
+		return errs.Trace(err)
 	}
 	return nil
 }
