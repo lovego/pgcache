@@ -1,81 +1,80 @@
 package pgnotify
 
 import (
-	"fmt"
-	"log"
+	"database/sql"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/fatih/color"
-	"github.com/go-pg/pg"
+	"github.com/lovego/errs"
 	"github.com/lovego/logger"
 )
 
 func TestNotifier(t *testing.T) {
-	var db = getTestDb(t)
-	var notifier, err = New(db, logger.New("", os.Stderr, nil))
+	var addr = "postgres://develop:@localhost/test?sslmode=disable"
+	db, err := sql.Open(`postgres`, addr)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := db.Ping(); err != nil {
+		t.Fatal(err)
+	}
+
+	notifier, err := New(addr, logger.New("", os.Stderr, nil))
+	if err != nil {
+		t.Fatal(errs.WithStack(err))
 	}
 
 	testTable(notifier, db, `pgnotify_t1`, t)
 	testTable(notifier, db, `pgnotify_t2`, t)
 
-	time.Sleep(100 * time.Millisecond) // ensure event has reached
 }
 
-func testTable(notifier *Notifier, db *pg.DB, table string, t *testing.T) {
-	var tbl = pg.Q(table)
+func testTable(notifier *Notifier, db *sql.DB, table string, t *testing.T) {
 	if _, err := db.Exec(`
-	drop table if exists ?;
-	create table if not exists ? (
+	drop table if exists ` + table + `;
+	create table if not exists ` + table + ` (
 		id bigserial, name varchar(100), time timestamptz
-	)`, tbl, tbl); err != nil {
+	)`); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := notifier.Notify(table, testListener{}); err != nil {
-		t.Fatal(err)
+	h := testHandler{t: t}
+	if err := notifier.Notify(table, &h); err != nil {
+		t.Fatal(errs.WithStack(err))
 	}
 	time.Sleep(100 * time.Millisecond) // ensure listen loop has started
 
-	if _, err := db.Exec(`insert into ? (name, time) values ('李雷', now())`, tbl); err != nil {
+	if _, err := db.Exec(`insert into ` + table + ` (name, time) values ('李雷', now())`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`update ? set name = '韩梅梅'`, tbl); err != nil {
+	if _, err := db.Exec(`update ` + table + ` set name = '韩梅梅'`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec(`delete from ?`, tbl); err != nil {
+	if _, err := db.Exec(`delete from ` + table); err != nil {
 		t.Fatal(err)
+	}
+
+	time.Sleep(100 * time.Millisecond) // ensure event has reached
+	if h.create != 1 || h.update != 1 && h.delete != 1 {
+		t.Errorf("expected: %+v", h)
 	}
 }
 
-type testListener struct {
+type testHandler struct {
+	create, update, delete int
+	t                      *testing.T
 }
 
-func (t testListener) Create(table string, buf []byte) {
-	fmt.Printf("%s create: %s\n", table, buf)
+func (h *testHandler) Create(table string, buf []byte) {
+	h.create++
+	h.t.Logf("%s create: %s\n", table, buf)
 }
-func (t testListener) Update(table string, buf []byte) {
-	fmt.Printf("%s update: %s\n", table, buf)
+func (h *testHandler) Update(table string, buf []byte) {
+	h.update++
+	h.t.Logf("%s update: %s\n", table, buf)
 }
-func (t testListener) Delete(table string, buf []byte) {
-	fmt.Printf("%s delete: %s\n", table, buf)
-}
-
-func getTestDb(t *testing.T) *pg.DB {
-	options, err := pg.ParseURL("postgres://develop:@localhost/test?sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
-	db := pg.Connect(options)
-	db.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-		query, err := event.FormattedQuery()
-		if err != nil {
-			log.Println(err)
-		}
-		log.Printf("Postgres: %s %s", time.Since(event.StartTime), color.GreenString(query))
-	})
-	return db
+func (h *testHandler) Delete(table string, buf []byte) {
+	h.delete++
+	h.t.Logf("%s delete: %s\n", table, buf)
 }

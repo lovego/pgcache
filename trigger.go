@@ -1,15 +1,17 @@
 package pgnotify
 
 import (
-	"github.com/go-pg/pg"
+	"database/sql"
+	"fmt"
+
 	"github.com/lovego/errs"
 )
 
-func CreateFunction(db *pg.DB) error {
+func CreateFunction(db *sql.DB) error {
 	var count int
-	if _, err := db.Query(pg.Scan(&count),
+	if err := db.QueryRow(
 		`select count(*) as count from pg_proc where proname ='pgnotify'`,
-	); err != nil {
+	).Scan(&count); err != nil {
 		return errs.Trace(err)
 	}
 	if count > 0 {
@@ -29,23 +31,22 @@ $$ language plpgsql`); err != nil {
 	return nil
 }
 
-func CreateTriggerIfNotExists(db *pg.DB, table string) error {
+func CreateTriggerIfNotExists(db *sql.DB, table string) error {
 	var count int
-	if _, err := db.Query(pg.Scan(&count),
+	if err := db.QueryRow(
 		`select count(*) as count from pg_trigger
-		where tgrelid = ?::regclass and tgname ='?_pgnotify' and not tgisinternal`,
-		table, pg.Q(table),
-	); err != nil {
+		where tgrelid = $1::regclass and tgname = $2 and not tgisinternal`,
+		table, table+"?_pgnotify",
+	).Scan(&count); err != nil {
 		return errs.Trace(err)
 	}
 	if count > 0 {
 		return nil
 	}
-	if _, err := db.Exec(
-		`create trigger ?_pgnotify after insert or update or delete on ?
-			for each row execute procedure pgnotify()`,
-		pg.Q(table), pg.Q(table),
-	); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(
+		`create trigger %s_pgnotify after insert or update or delete on %s
+			for each row execute procedure pgnotify()`, table, table,
+	)); err != nil {
 		return errs.Trace(err)
 	}
 	return nil
