@@ -12,10 +12,10 @@ import (
 )
 
 type Handler interface {
-	//	Reload(table string, buf []byte)
 	Create(table string, buf []byte)
 	Update(table string, buf []byte)
 	Delete(table string, buf []byte)
+	ConnLoss(table string)
 }
 
 type Notifier struct {
@@ -76,8 +76,10 @@ func (n *Notifier) listen() {
 }
 
 func (n *Notifier) handle(notice *pq.Notification) {
-	if notice == nil {
-		// connection loss
+	if notice == nil { // connection loss
+		for table, handler := range n.handlers {
+			handler.ConnLoss(table)
+		}
 		return
 	}
 

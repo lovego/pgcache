@@ -65,6 +65,9 @@ type testHandler struct {
 	t                      *testing.T
 }
 
+func (h *testHandler) ConnLoss(table string) {
+}
+
 func (h *testHandler) Create(table string, buf []byte) {
 	h.create++
 	h.t.Logf("%s create: %s\n", table, buf)
