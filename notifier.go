@@ -11,19 +11,18 @@ import (
 	"github.com/lovego/logger"
 )
 
-type Notifier struct {
-	dbAddr   string
-	db       *sql.DB
-	listener *pq.Listener
-	logger   *logger.Logger
-	handlers map[string]Handler
-}
-
 type Handler interface {
 	//	Reload(table string, buf []byte)
 	Create(table string, buf []byte)
 	Update(table string, buf []byte)
 	Delete(table string, buf []byte)
+}
+
+type Notifier struct {
+	db       *sql.DB
+	listener *pq.Listener
+	logger   *logger.Logger
+	handlers map[string]Handler
 }
 
 type Message struct {
@@ -46,19 +45,17 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	if err := CreateFunction(db); err != nil {
 		return nil, err
 	}
-	return &Notifier{
-		dbAddr: dbAddr, db: db,
-		logger: logger, handlers: make(map[string]Handler),
-	}, nil
+	n := &Notifier{
+		db: db, logger: logger, handlers: make(map[string]Handler),
+	}
+	n.listener = pq.NewListener(dbAddr, time.Nanosecond, time.Minute, n.eventLogger)
+	go n.listen()
+	return n, nil
 }
 
 func (n *Notifier) Notify(table string, handler Handler) error {
 	if err := CreateTriggerIfNotExists(n.db, table); err != nil {
 		return err
-	}
-	if n.listener == nil {
-		n.listener = pq.NewListener(n.dbAddr, time.Nanosecond, time.Minute, n.eventLogger)
-		go n.listen()
 	}
 	n.handlers[table] = handler
 	if err := n.listener.Listen("pgnotify_" + table); err != nil {

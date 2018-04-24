@@ -43,7 +43,6 @@ func testTable(notifier *Notifier, db *sql.DB, table string, t *testing.T) {
 	if err := notifier.Notify(table, &h); err != nil {
 		t.Fatal(errs.WithStack(err))
 	}
-	time.Sleep(100 * time.Millisecond) // ensure listen loop has started
 
 	if _, err := db.Exec(`insert into ` + table + ` (name, time) values ('李雷', now())`); err != nil {
 		t.Fatal(err)
