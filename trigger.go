@@ -36,7 +36,7 @@ func CreateTriggerIfNotExists(db *sql.DB, table string) error {
 	if err := db.QueryRow(
 		`select count(*) as count from pg_trigger
 		where tgrelid = $1::regclass and tgname = $2 and not tgisinternal`,
-		table, table+"?_pgnotify",
+		table, table+"_pgnotify",
 	).Scan(&count); err != nil {
 		return errs.Trace(err)
 	}
