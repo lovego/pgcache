@@ -1,3 +1,6 @@
+/*
+适用于低频修改且量小的数据，单线程操作。
+*/
 package pgnotify
 
 import (
@@ -58,9 +61,11 @@ func (n *Notifier) Notify(table string, handler Handler) error {
 		return err
 	}
 	n.handlers[table] = handler
-	if err := n.listener.Listen("pgnotify_" + table); err != nil {
+	channel := "pgnotify_" + table
+	if err := n.listener.Listen(channel); err != nil {
 		return errs.Trace(err)
 	}
+	n.listener.Notify <- &pq.Notification{Channel: channel, Extra: "reload"}
 	return nil
 }
 
@@ -87,6 +92,10 @@ func (n *Notifier) handle(notice *pq.Notification) {
 	handler := n.handlers[table]
 	if handler == nil {
 		n.logger.Errorf("unexpected notification: %+v", notice)
+	}
+	if notice.Extra == "reload" {
+		handler.ConnLoss(table)
+		return
 	}
 
 	var msg Message
