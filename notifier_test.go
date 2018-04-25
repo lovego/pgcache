@@ -55,17 +55,18 @@ func testTable(notifier *Notifier, db *sql.DB, table string, t *testing.T) {
 	}
 
 	time.Sleep(100 * time.Millisecond) // ensure event has reached
-	if h.create != 1 || h.update != 1 && h.delete != 1 {
+	if h.connLoss != 1 || h.create != 1 || h.update != 1 && h.delete != 1 {
 		t.Errorf("expected: %+v", h)
 	}
 }
 
 type testHandler struct {
-	create, update, delete int
-	t                      *testing.T
+	connLoss, create, update, delete int
+	t                                *testing.T
 }
 
 func (h *testHandler) ConnLoss(table string) {
+	h.connLoss++
 }
 
 func (h *testHandler) Create(table string, buf []byte) {
