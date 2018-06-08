@@ -69,15 +69,27 @@ func (h *testHandler) ConnLoss(table string) {
 	h.connLoss++
 }
 
-func (h *testHandler) Create(table string, buf []byte) {
+func (h *testHandler) Create(table string, newBuf []byte) {
 	h.create++
-	h.t.Logf("%s create: %s\n", table, buf)
+	if len(newBuf) == 0 {
+		h.t.Fatal("create does not receive record!")
+	}
+	h.t.Logf("%s create: %s\n", table, newBuf)
 }
 func (h *testHandler) Update(table string, oldBuf, newBuf []byte) {
 	h.update++
+	if len(oldBuf) == 0 {
+		h.t.Fatal("update does not receive old record!")
+	}
+	if len(newBuf) == 0 {
+		h.t.Fatal("update does not receive new record!")
+	}
 	h.t.Logf("%s update: %s from: %s\n", table, newBuf, oldBuf)
 }
-func (h *testHandler) Delete(table string, buf []byte) {
+func (h *testHandler) Delete(table string, oldBuf []byte) {
 	h.delete++
-	h.t.Logf("%s delete: %s\n", table, buf)
+	if len(oldBuf) == 0 {
+		h.t.Fatal("delete does not receive record!")
+	}
+	h.t.Logf("%s delete: %s\n", table, oldBuf)
 }

@@ -30,8 +30,8 @@ type Notifier struct {
 
 type Message struct {
 	Action string
-	Data   json.RawMessage
 	Old    json.RawMessage
+	New    json.RawMessage
 }
 
 func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
@@ -105,11 +105,11 @@ func (n *Notifier) handle(notice *pq.Notification) {
 	}
 	switch msg.Action {
 	case "INSERT":
-		handler.Create(table, msg.Data)
+		handler.Create(table, msg.New)
 	case "UPDATE":
-		handler.Update(table, msg.Old, msg.Data)
+		handler.Update(table, msg.Old, msg.New)
 	case "DELETE":
-		handler.Delete(table, msg.Data)
+		handler.Delete(table, msg.Old)
 	default:
 		n.logger.Errorf("unexpected msg: %+v", msg)
 	}
