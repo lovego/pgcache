@@ -73,9 +73,9 @@ func (h *testHandler) Create(table string, buf []byte) {
 	h.create++
 	h.t.Logf("%s create: %s\n", table, buf)
 }
-func (h *testHandler) Update(table string, buf []byte) {
+func (h *testHandler) Update(table string, oldBuf, newBuf []byte) {
 	h.update++
-	h.t.Logf("%s update: %s\n", table, buf)
+	h.t.Logf("%s update: %s from: %s\n", table, newBuf, oldBuf)
 }
 func (h *testHandler) Delete(table string, buf []byte) {
 	h.delete++

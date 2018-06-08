@@ -16,7 +16,7 @@ import (
 
 type Handler interface {
 	Create(table string, buf []byte)
-	Update(table string, buf []byte)
+	Update(table string, oldBuf, newBuf []byte)
 	Delete(table string, buf []byte)
 	ConnLoss(table string)
 }
@@ -31,6 +31,7 @@ type Notifier struct {
 type Message struct {
 	Action string
 	Data   json.RawMessage
+	Old    json.RawMessage
 }
 
 func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
@@ -106,7 +107,7 @@ func (n *Notifier) handle(notice *pq.Notification) {
 	case "INSERT":
 		handler.Create(table, msg.Data)
 	case "UPDATE":
-		handler.Update(table, msg.Data)
+		handler.Update(table, msg.Old, msg.Data)
 	case "DELETE":
 		handler.Delete(table, msg.Data)
 	default:

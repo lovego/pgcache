@@ -21,7 +21,8 @@ func CreateFunction(db *sql.DB) error {
 	begin
 		perform pg_notify('pgnotify_' || tg_table_name, json_build_object(
 			'action', tg_op,
-			'data', row_to_json(case when tg_op = 'DELETE' then old else new end)
+			'data', row_to_json(case when tg_op = 'DELETE' then old else new end),
+      'old', row_to_json(case when tg_op = 'UPDATE' then old end)
 		)::text);
 		return null;
 	end;
