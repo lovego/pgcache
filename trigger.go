@@ -8,21 +8,12 @@ import (
 )
 
 func CreateFunction(db *sql.DB) error {
-	// var count int
-	// if err := db.QueryRow(
-	// 	`select count(*) as count from pg_proc where proname ='pgnotify'`,
-	// ).Scan(&count); err != nil {
-	// 	return errs.Trace(err)
-	// }
-	// if count > 0 {
-	// 	return nil
-	// }
 	if _, err := db.Exec(`create or replace function pgnotify() returns trigger as $$
 	begin
 		perform pg_notify('pgnotify_' || tg_table_name, json_build_object(
 			'action', tg_op,
-			'old', row_to_json(case when tg_op != 'INSERT' then old end),
-      'new', row_to_json(case when tg_op != 'DELETE' then new end)
+			'old', row_to_json(case when tg_op != 'INSERT' then row(old) end),
+      		'new', row_to_json(case when tg_op != 'DELETE' then row(new) end)
 		)::text);
 		return null;
 	end;
