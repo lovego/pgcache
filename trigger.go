@@ -3,27 +3,60 @@ package pgnotify
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/lovego/errs"
 )
 
 func CreateFunction(db *sql.DB) error {
-	if _, err := db.Exec(`create or replace function pgnotify() returns trigger as $$
-	begin
-		perform pg_notify('pgnotify_' || tg_table_name, json_build_object(
-			'action', tg_op,
-			'old', row_to_json(case when tg_op != 'INSERT' then row(old) end),
-      		'new', row_to_json(case when tg_op != 'DELETE' then row(new) end)
-		)::text);
-		return null;
-	end;
-$$ language plpgsql`); err != nil {
+	_, err := db.Exec(`
+        CREATE OR REPLACE FUNCTION pgnotify() RETURNS TRIGGER AS $$
+        DECLARE
+            field TEXT;
+            query TEXT;
+            new_row RECORD;
+            old_row RECORD;
+            new_json JSONB := '{}';
+            old_json JSONB := '{}';
+        BEGIN
+            query := 'SELECT ';
+            FOREACH field IN ARRAY TG_ARGV LOOP
+                query := query || format('($1).%s',  field) || ',';
+            END LOOP;
+            query := rtrim(query, ',');
+
+            IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+                EXECUTE query
+                INTO old_row
+                USING OLD;
+                old_json := row_to_json(old_row);
+            END IF;
+
+            IF TG_OP = 'UPDATE' OR TG_OP = 'INSERT' THEN
+                EXECUTE query
+                INTO new_row
+                USING NEW;
+                new_json := row_to_json(new_row);  
+            END IF;
+
+            IF (TG_OP = 'UPDATE' AND new_json <> old_json) OR TG_OP = 'INSERT' OR TG_OP = 'DELETE' THEN
+                PERFORM pg_notify('pgnotify_' || TG_TABLE_NAME, json_build_object(
+                    'action', TG_OP,
+                    'old', CASE WHEN TG_OP != 'INSERT' THEN old_json END,
+                    'new', CASE WHEN TG_OP != 'DELETE' THEN new_json END
+                )::TEXT);
+            END IF;
+
+            RETURN NULL;
+        END;
+        $$ LANGUAGE PLPGSQL;`)
+	if err != nil {
 		return errs.Trace(err)
 	}
 	return nil
 }
 
-func CreateTriggerIfNotExists(db *sql.DB, table string) error {
+func CreateTriggerIfNotExists(db *sql.DB, table string, wantedColumns []string) error {
 	var count int
 	if err := db.QueryRow(
 		`select count(*) as count from pg_trigger
@@ -35,11 +68,24 @@ func CreateTriggerIfNotExists(db *sql.DB, table string) error {
 	if count > 0 {
 		return nil
 	}
+
+	columns := constructWantedColumnsQuery(wantedColumns)
 	if _, err := db.Exec(fmt.Sprintf(
 		`create trigger %s_pgnotify after insert or update or delete on %s
-			for each row execute procedure pgnotify()`, table, table,
+			for each row execute procedure pgnotify(%s)`, table, table, columns,
 	)); err != nil {
 		return errs.Trace(err)
 	}
 	return nil
+}
+
+func constructWantedColumnsQuery(wantedColumns []string) string {
+	if wantedColumns == nil || len(wantedColumns) == 0 {
+		return `'*'`
+	}
+	columns := make([]string, 0, len(wantedColumns))
+	for _, column := range wantedColumns {
+		columns = append(columns, fmt.Sprintf(`'%s'`, column))
+	}
+	return strings.Join(columns, ",")
 }

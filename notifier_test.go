@@ -40,7 +40,7 @@ func testTable(notifier *Notifier, db *sql.DB, table string, t *testing.T) {
 	}
 
 	h := testHandler{t: t}
-	if err := notifier.Notify(table, &h); err != nil {
+	if err := notifier.Notify(table, []string{"time", "id", "name"}, &h); err != nil {
 		t.Fatal(errs.WithStack(err))
 	}
 

@@ -57,8 +57,8 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	return n, nil
 }
 
-func (n *Notifier) Notify(table string, handler Handler) error {
-	if err := CreateTriggerIfNotExists(n.db, table); err != nil {
+func (n *Notifier) Notify(table string, wantedColumns []string, handler Handler) error {
+	if err := CreateTriggerIfNotExists(n.db, table, wantedColumns); err != nil {
 		return err
 	}
 	n.handlers[table] = handler
