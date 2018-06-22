@@ -69,7 +69,7 @@ func CreateTriggerIfNotExists(db *sql.DB, table string, wantedColumns []string) 
 		return nil
 	}
 
-	columns := constructWantedColumnsQuery(wantedColumns)
+	columns := constructPGFuncParams(wantedColumns)
 	if _, err := db.Exec(fmt.Sprintf(
 		`create trigger %s_pgnotify after insert or update or delete on %s
 			for each row execute procedure pgnotify(%s)`, table, table, columns,
@@ -79,7 +79,7 @@ func CreateTriggerIfNotExists(db *sql.DB, table string, wantedColumns []string) 
 	return nil
 }
 
-func constructWantedColumnsQuery(wantedColumns []string) string {
+func constructPGFuncParams(wantedColumns []string) string {
 	if wantedColumns == nil || len(wantedColumns) == 0 {
 		return `'*'`
 	}
