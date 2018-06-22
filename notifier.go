@@ -28,7 +28,7 @@ type Notifier struct {
 	handlers map[string]Handler
 }
 
-type Message struct {
+type message struct {
 	Action string
 	Old    json.RawMessage
 	New    json.RawMessage
@@ -46,7 +46,7 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 
-	if err := CreateFunction(db); err != nil {
+	if err := createPGFunction(db); err != nil {
 		return nil, err
 	}
 	n := &Notifier{
@@ -57,8 +57,8 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	return n, nil
 }
 
-func (n *Notifier) Notify(table string, wantedColumns []string, handler Handler) error {
-	if err := CreateTriggerIfNotExists(n.db, table, wantedColumns); err != nil {
+func (n *Notifier) Notify(table string, expectedColumns []string, handler Handler) error {
+	if err := createTriggerIfNotExists(n.db, table, expectedColumns); err != nil {
 		return err
 	}
 	n.handlers[table] = handler
@@ -99,7 +99,7 @@ func (n *Notifier) handle(notice *pq.Notification) {
 		return
 	}
 
-	var msg Message
+	var msg message
 	if err := json.Unmarshal([]byte(notice.Extra), &msg); err != nil {
 		n.logger.Error(err)
 	}

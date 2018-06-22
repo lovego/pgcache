@@ -8,7 +8,7 @@ import (
 	"github.com/lovego/errs"
 )
 
-func CreateFunction(db *sql.DB) error {
+func createPGFunction(db *sql.DB) error {
 	_, err := db.Exec(`
         CREATE OR REPLACE FUNCTION pgnotify() RETURNS TRIGGER AS $$
         DECLARE
@@ -56,11 +56,14 @@ func CreateFunction(db *sql.DB) error {
 	return nil
 }
 
-func CreateTriggerIfNotExists(db *sql.DB, table string, wantedColumns []string) error {
+func createTriggerIfNotExists(db *sql.DB, table string, expectedColumns []string) error {
 	var count int
 	if err := db.QueryRow(
-		`select count(*) as count from pg_trigger
-		where tgrelid = $1::regclass and tgname = $2 and not tgisinternal`,
+		`SELECT count(*) AS count 
+		 FROM pg_trigger
+		 WHERE tgrelid = $1::regclass 
+		 AND tgname = $2 
+		 AND NOT tgisinternal`,
 		table, table+"_pgnotify",
 	).Scan(&count); err != nil {
 		return errs.Trace(err)
@@ -69,22 +72,25 @@ func CreateTriggerIfNotExists(db *sql.DB, table string, wantedColumns []string) 
 		return nil
 	}
 
-	columns := constructPGFuncParams(wantedColumns)
-	if _, err := db.Exec(fmt.Sprintf(
-		`create trigger %s_pgnotify after insert or update or delete on %s
-			for each row execute procedure pgnotify(%s)`, table, table, columns,
-	)); err != nil {
+	columns := constructPGFuncParams(expectedColumns)
+	_, err := db.Exec(fmt.Sprintf(
+		`CREATE TRIGGER %s_pgnotify
+		 AFTER INSERT OR UPDATE OR DELETE
+         ON %s FOR EACH ROW
+         EXECUTE PROCEDURE pgnotify(%s)`,
+		table, table, columns))
+	if err != nil {
 		return errs.Trace(err)
 	}
 	return nil
 }
 
-func constructPGFuncParams(wantedColumns []string) string {
-	if wantedColumns == nil || len(wantedColumns) == 0 {
+func constructPGFuncParams(expectedColumns []string) string {
+	if expectedColumns == nil || len(expectedColumns) == 0 {
 		return `'*'`
 	}
-	columns := make([]string, 0, len(wantedColumns))
-	for _, column := range wantedColumns {
+	columns := make([]string, 0, len(expectedColumns))
+	for _, column := range expectedColumns {
 		columns = append(columns, fmt.Sprintf(`'%s'`, column))
 	}
 	return strings.Join(columns, ",")
