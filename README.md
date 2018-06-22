@@ -1,5 +1,5 @@
 # pgnotify
-Make postgresql notify you when "UPDATE", "INSERT", "DELETE" executed, and return excepted columns' data to you. 
+Make postgresql notify you when "UPDATE", "INSERT", "DELETE" executed, and return expected columns' data to you. 
 
 ## Install
 `$ go get github.com/lovego/pgnotify`
