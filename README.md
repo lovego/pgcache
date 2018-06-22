@@ -4,5 +4,5 @@ Make postgresql notify you when "UPDATE", "INSERT", "DELETE" executed, and retur
 ## Install
 `$ go get github.com/lovego/pgnotify`
 
-## Documentation
+## Docs
 [https://godoc.org/github.com/lovego/pgnotify](https://godoc.org/github.com/lovego/pgnotify)
