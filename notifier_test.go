@@ -1,3 +1,7 @@
+/*
+测试命令:
+PG_DATA_SOURCE="postgres://USERNAME:PASSWORD@HOSTNAME:PORT/DBNAME?sslmode=disable" go test
+*/
 package pgnotify
 
 import (
@@ -17,7 +21,7 @@ import (
 )
 
 func TestNotifier(t *testing.T) {
-	var addr = "postgres://develop:@localhost/test?sslmode=disable"
+	var addr = constructDataSource()
 	db, err := sql.Open(`postgres`, addr)
 	if err != nil {
 		t.Fatal(err)
@@ -33,6 +37,16 @@ func TestNotifier(t *testing.T) {
 
 	testNotifyActions(notifier, db, t)
 	testNotifiedColumnsAsExpected(notifier, db, t)
+}
+
+func constructDataSource() string {
+	dataSource := "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
+
+	if ds, ok := os.LookupEnv("PG_DATA_SOURCE"); ok {
+		dataSource = ds
+	}
+
+	return dataSource
 }
 
 func testNotifyActions(notifier *Notifier, db *sql.DB, t *testing.T) {
