@@ -30,7 +30,7 @@ func TestNotifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	notifier, err := New(addr, logger.New("", os.Stderr, nil))
+	notifier, err := New(addr, logger.New(os.Stderr))
 	if err != nil {
 		t.Fatal(errs.WithStack(err))
 	}
