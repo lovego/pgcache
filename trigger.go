@@ -57,28 +57,18 @@ func createPGFunction(db *sql.DB) error {
 }
 
 func createTriggerIfNotExists(db *sql.DB, table string, expectedColumns []string) error {
-	var count int
-	if err := db.QueryRow(
-		`SELECT count(*) AS count
-		 FROM pg_trigger
-		 WHERE tgrelid = $1::regclass
-		 AND tgname = $2
-		 AND NOT tgisinternal`,
-		table, table+"_pgnotify",
-	).Scan(&count); err != nil {
+	trigger := fmt.Sprintf("%s_pgnotify", table)
+	_, err := db.Exec(fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s", trigger, table))
+	if err != nil {
 		return errs.Trace(err)
 	}
-	if count > 0 {
-		return nil
-	}
-
 	columns := constructPGFuncParams(expectedColumns)
-	_, err := db.Exec(fmt.Sprintf(
-		`CREATE TRIGGER %s_pgnotify
+	_, err = db.Exec(fmt.Sprintf(
+		`CREATE TRIGGER %s
 		 AFTER INSERT OR UPDATE OR DELETE
          ON %s FOR EACH ROW
          EXECUTE PROCEDURE pgnotify(%s)`,
-		table, table, columns))
+		trigger, table, columns))
 	if err != nil {
 		return errs.Trace(err)
 	}
