@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/lovego/errs"
 	"github.com/lovego/logger"
+	"github.com/pkg/errors"
 )
 
 type Handler interface {
@@ -26,6 +27,7 @@ type Notifier struct {
 	listener *pq.Listener
 	logger   *logger.Logger
 	handlers map[string]Handler
+	inited   map[string]chan struct{}
 }
 
 type message struct {
@@ -50,7 +52,10 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 		return nil, err
 	}
 	n := &Notifier{
-		db: db, logger: logger, handlers: make(map[string]Handler),
+		db:       db,
+		logger:   logger,
+		handlers: make(map[string]Handler),
+		inited:   make(map[string]chan struct{}),
 	}
 	n.listener = pq.NewListener(dbAddr, time.Nanosecond, time.Minute, n.eventLogger)
 	go n.listen()
@@ -58,15 +63,20 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 }
 
 func (n *Notifier) Notify(table string, expectedColumns []string, handler Handler) error {
+	if _, ok := n.handlers[table]; ok {
+		return errors.Errorf("pgnotify: the triiger of table '%s' has exist", table)
+	}
 	if err := createTriggerIfNotExists(n.db, table, expectedColumns); err != nil {
 		return err
 	}
 	n.handlers[table] = handler
+	n.inited[table] = make(chan struct{})
 	channel := "pgnotify_" + table
 	if err := n.listener.Listen(channel); err != nil {
 		return errs.Trace(err)
 	}
 	n.listener.Notify <- &pq.Notification{Channel: channel, Extra: "reload"}
+	<-n.inited[table]
 	return nil
 }
 
@@ -96,6 +106,8 @@ func (n *Notifier) handle(notice *pq.Notification) {
 	}
 	if notice.Extra == "reload" {
 		handler.ConnLoss(table)
+		n.inited[table] <- struct{}{}
+		close(n.inited[table])
 		return
 	}
 

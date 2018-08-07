@@ -34,7 +34,7 @@ func TestNotifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(errs.WithStack(err))
 	}
-
+	testInited(notifier, db, t)
 	testNotifyActions(notifier, db, t)
 	testNotifiedColumnsAsExpected(notifier, db, t)
 }
@@ -47,6 +47,16 @@ func constructDataSource() string {
 	}
 
 	return dataSource
+}
+
+func testInited(notifier *Notifier, db *sql.DB, t *testing.T) {
+	table := "pgnotify_initied"
+	createTable(db, table, t)
+	i := initiedHandler{}
+	startPGNotify(notifier, table, []string{"name"}, &i, t)
+	if i.rows != 1 {
+		t.Fatalf("not inited")
+	}
 }
 
 func testNotifyActions(notifier *Notifier, db *sql.DB, t *testing.T) {
@@ -294,4 +304,25 @@ func (tr *triggerActionsHandler) Delete(table string, oldBuf []byte) {
 		tr.t.Fatal("delete does not receive record!")
 	}
 	tr.t.Logf("%s delete: %s\n", table, oldBuf)
+}
+
+type initiedHandler struct {
+	rows int64
+}
+
+func (i *initiedHandler) ConnLoss(table string) {
+	time.Sleep(1 * time.Second)
+	i.rows = 1
+}
+
+func (i *initiedHandler) Create(table string, newBuf []byte) {
+
+}
+
+func (i *initiedHandler) Update(table string, oldBuf, newBuf []byte) {
+
+}
+
+func (i *initiedHandler) Delete(table string, oldBuf []byte) {
+
 }
