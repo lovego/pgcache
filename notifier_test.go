@@ -52,18 +52,18 @@ func ExampleNotifier() {
 	}
 
 	if _, err := db.Exec(`
-  INSERT INTO students(name, time) VALUES ('李雷', '2018-09-08 15:55:00+08')
+    INSERT INTO students(name, time) VALUES ('李雷', '2018-09-08 15:55:00+08')
   `); err != nil {
 		panic(err)
 	}
 	if _, err = db.Exec(`
-  UPDATE students SET name = '韩梅梅', time = '2018-09-09 15:56:00+08'
+    UPDATE students SET name = '韩梅梅', time = '2018-09-09 15:56:00+08'
   `); err != nil {
 		panic(err)
 	}
 	// should not notify
 	if _, err = db.Exec(`
-  UPDATE students SET time = '2018-09-10 15:57:00+08'
+    UPDATE students SET time = '2018-09-10 15:57:00+08'
   `); err != nil {
 		panic(err)
 	}
