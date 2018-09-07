@@ -64,7 +64,7 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 
 func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
 	if _, ok := n.handlers[table]; ok {
-		return fmt.Errorf("pgnotify: the triiger of table '%s' has exist", table)
+		return fmt.Errorf("pgnotify: the trigger of table '%s' aready exists.", table)
 	}
 	if err := createTrigger(n.db, table, columnsToNotify, columnsToCheck); err != nil {
 		return err
