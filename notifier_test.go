@@ -1,7 +1,3 @@
-/*
-测试命令:
-PG_DATA_SOURCE="postgres://user:password@host:port/db?sslmode=disable" go test
-*/
 package pgnotify
 
 import (
@@ -95,7 +91,8 @@ func createStudentsTable(db *sql.DB) {
 	CREATE TABLE IF NOT EXISTS students (
 		id   bigserial,
 		name varchar(100),
-		time timestamptz
+		time timestamptz,
+    other text default 'not to notify'
 	)`); err != nil {
 		panic(err)
 	}
