@@ -1,328 +1,112 @@
 /*
 测试命令:
-PG_DATA_SOURCE="postgres://USERNAME:PASSWORD@HOSTNAME:PORT/DBNAME?sslmode=disable" go test
+PG_DATA_SOURCE="postgres://user:password@host:port/db?sslmode=disable" go test
 */
 package pgnotify
 
 import (
 	"database/sql"
-	"os"
-	"testing"
-	"time"
-
-	"encoding/json"
-
 	"fmt"
-
-	"bytes"
+	"os"
+	"runtime"
+	"time"
 
 	"github.com/lovego/errs"
 	"github.com/lovego/logger"
 )
 
-func TestNotifier(t *testing.T) {
-	var addr = constructDataSource()
-	db, err := sql.Open(`postgres`, addr)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Ping(); err != nil {
-		t.Fatal(err)
-	}
-
-	notifier, err := New(addr, logger.New(os.Stderr))
-	if err != nil {
-		t.Fatal(errs.WithStack(err))
-	}
-	testInited(notifier, db, t)
-	testNotifyActions(notifier, db, t)
-	testNotifiedColumnsAsExpected(notifier, db, t)
+type testHandler struct {
 }
 
-func constructDataSource() string {
-	dataSource := "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
-
-	if ds, ok := os.LookupEnv("PG_DATA_SOURCE"); ok {
-		dataSource = ds
-	}
-
-	return dataSource
+func (h testHandler) ConnLoss(table string) {
+	fmt.Printf("ConnLoss %s\n", table)
 }
 
-func testInited(notifier *Notifier, db *sql.DB, t *testing.T) {
-	table := "pgnotify_initied"
-	createTable(db, table, t)
-	i := initiedHandler{}
-	startPGNotify(notifier, table, []string{"name"}, &i, t)
-	if i.rows != 1 {
-		t.Fatalf("not inited")
-	}
+func (h testHandler) Create(table string, newBuf []byte) {
+	fmt.Printf("Create %s\n  %s\n", table, newBuf)
 }
 
-func testNotifyActions(notifier *Notifier, db *sql.DB, t *testing.T) {
-	table := "pgnotify_actions"
-	createTable(db, table, t)
+func (h testHandler) Update(table string, oldBuf, newBuf []byte) {
+	fmt.Printf("Update %s\n  old: %s\n  new: %s\n", table, oldBuf, newBuf)
+}
 
-	h := triggerActionsHandler{t: t}
-	startPGNotify(notifier, table, []string{"time", "id", "name"}, &h, t)
+func (h testHandler) Delete(table string, oldBuf []byte) {
+	fmt.Printf("Delete %s\n  %s\n", table, oldBuf)
+}
 
-	_, err := db.Exec(fmt.Sprintf(`INSERT INTO %s(name, time) VALUES ('李雷', now())`, table))
+func ExampleNotifier() {
+	db, err := sql.Open(`postgres`, getTestDataSource())
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
+	createStudentsTable(db)
 
-	_, err = db.Exec(fmt.Sprintf(`UPDATE %s SET NAME = '韩梅梅'`, table))
+	notifier, err := New(getTestDataSource(), logger.New(os.Stderr))
 	if err != nil {
-		t.Fatal(err)
+		fmt.Println(errs.WithStack(err))
+		return
+	}
+	if err := notifier.Notify(
+		"students",
+		"$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
+		"$1.id, $1.name",
+		testHandler{},
+	); err != nil {
+		panic(errs.WithStack(err))
 	}
 
-	_, err = db.Exec(fmt.Sprintf(`DELETE FROM %s`, table))
-	if err != nil {
-		t.Fatal(err)
+	if _, err := db.Exec(`
+  INSERT INTO students(name, time) VALUES ('李雷', '2018-09-08 15:55:00+08')
+  `); err != nil {
+		panic(err)
+	}
+	if _, err = db.Exec(`
+  UPDATE students SET name = '韩梅梅', time = '2018-09-09 15:56:00+08'
+  `); err != nil {
+		panic(err)
+	}
+	// should not notify
+	if _, err = db.Exec(`
+  UPDATE students SET time = '2018-09-10 15:57:00+08'
+  `); err != nil {
+		panic(err)
+	}
+	if _, err = db.Exec(`DELETE FROM students`); err != nil {
+		panic(err)
 	}
 
-	ensureNotifyReached()
+	time.Sleep(10 * time.Millisecond)
 
-	if h.connLoss != 1 || h.create != 1 || h.update != 1 && h.delete != 1 {
-		t.Errorf("expected: %+v", h)
-	}
+	// Output:
+	// ConnLoss students
+	// Create students
+	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	// Update students
+	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
+	// Delete students
+	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
+
 }
 
-func testNotifiedColumnsAsExpected(notifier *Notifier, db *sql.DB, t *testing.T) {
-	tablePrefix := "pgnotify_columns"
-
-	testCreate(notifier, db, tablePrefix, t)
-	testUpdate(notifier, db, tablePrefix, t)
-	testDelete(notifier, db, tablePrefix, t)
-}
-
-func testCreate(notifier *Notifier, db *sql.DB, tablePrefix string, t *testing.T) {
-	testColumns(notifier, db, tablePrefix+"_all", []string{"id", "name", "time"}, nil, t)
-	testColumns(notifier, db, tablePrefix+"_some", []string{"id", "name"}, []string{"id", "name"}, t)
-}
-
-func testColumns(
-	notifier *Notifier,
-	db *sql.DB,
-	table string,
-	expectedColumns []string,
-	actualColumns []string,
-	t *testing.T,
-) {
-	createTable(db, table, t)
-
-	h := notifiedColumnsHandler{}
-
-	startPGNotify(notifier, table, actualColumns, &h, t)
-
-	_, err := db.Exec(fmt.Sprintf(`INSERT INTO %s(name, time) VALUES ('李雷', now())`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ensureNotifyReached()
-
-	testColumnsAsExpected(expectedColumns, h.pgNEW, t)
-}
-
-func testUpdate(notifier *Notifier, db *sql.DB, tablePrefix string, t *testing.T) {
-	table := tablePrefix + "_update"
-	createTable(db, table, t)
-
-	_, err := db.Exec(fmt.Sprintf(`INSERT INTO %s(name, time) VALUES ('李雷', now())`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	h := notifiedColumnsHandler{}
-	expectedColumns := []string{"id", "time"}
-
-	startPGNotify(notifier, table, expectedColumns, &h, t)
-
-	_, err = db.Exec(fmt.Sprintf(`UPDATE %s SET name = '皮几万' WHERE name = '李雷'`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ensureNotifyReached()
-
-	if h.pgOLD != nil || h.pgNEW != nil {
-		t.Fatalf("expected: pgOLD = nil, pgNEW = nil, got pgOLD = %q, pgNEW = %q", h.pgOLD, h.pgNEW)
-	}
-
-	_, err = db.Exec(fmt.Sprintf(`UPDATE %s SET time = now() WHERE name = '皮几万'`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ensureNotifyReached()
-
-	if h.pgNEW == nil || h.pgOLD == nil {
-		t.Fatalf("expected: pgOLD != nil and pgNEW != nil, got pgOLD = %q, pgNEW = %q", h.pgOLD, h.pgNEW)
-	}
-	if bytes.Equal(h.pgOLD, h.pgNEW) {
-		t.Fatalf("expected: pgOLD != pgNEW, got pgOLD = %q, pgNEW = %q", h.pgOLD, h.pgNEW)
-	}
-
-	testColumnsAsExpected(expectedColumns, h.pgNEW, t)
-	testColumnsAsExpected(expectedColumns, h.pgOLD, t)
-}
-
-func testDelete(notifier *Notifier, db *sql.DB, tablePrefix string, t *testing.T) {
-	table := tablePrefix + "_delete"
-	createTable(db, table, t)
-
-	h := notifiedColumnsHandler{}
-	expectedColumns := []string{"name", "time"}
-
-	_, err := db.Exec(fmt.Sprintf(`INSERT INTO %s(name, time) VALUES ('皮几万', now())`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	startPGNotify(notifier, table, expectedColumns, &h, t)
-
-	_, err = db.Exec(fmt.Sprintf(`DELETE FROM %s WHERE name='皮几万'`, table))
-	if err != nil {
-		t.Fatal(err)
-	}
-	ensureNotifyReached()
-	testColumnsAsExpected(expectedColumns, h.pgOLD, t)
-}
-
-func ensureNotifyReached() {
-	time.Sleep(100 * time.Millisecond)
-}
-
-func startPGNotify(notifier *Notifier, table string, expectedColumns []string, h Handler, t *testing.T) {
-	if err := notifier.Notify(table, expectedColumns, h); err != nil {
-		t.Fatal(errs.WithStack(err))
-	}
-}
-
-func createTable(db *sql.DB, table string, t *testing.T) {
-	_, err := db.Exec(fmt.Sprintf(`
-	DROP TABLE IF EXISTS %s;
-	CREATE TABLE IF NOT EXISTS %s (
-		id bigserial, 
+func createStudentsTable(db *sql.DB) {
+	if _, err := db.Exec(`
+	DROP TABLE IF EXISTS students;
+	CREATE TABLE IF NOT EXISTS students (
+		id   bigserial,
 		name varchar(100),
 		time timestamptz
-	)`, table, table))
-	if err != nil {
-		t.Fatal(err)
+	)`); err != nil {
+		panic(err)
 	}
 }
 
-func testColumnsAsExpected(expectedColumns []string, notifiedMsg []byte, t *testing.T) {
-	var data map[string]interface{}
-	if err := json.Unmarshal(notifiedMsg, &data); err != nil {
-		t.Fatal(err)
+func getTestDataSource() string {
+	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
+		return env
+	} else if runtime.GOOS == "darwin" {
+		return "postgres://postgres:@localhost/test?sslmode=disable"
+	} else {
+		return "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
 	}
-
-	if !isColumnsAsExpected(expectedColumns, data) {
-		t.Fatalf("expected columns: %q, got columns : %q", expectedColumns, keys(data))
-	}
-}
-
-func isColumnsAsExpected(expectedColumns []string, notifiedMessage map[string]interface{}) bool {
-	keys := make([]string, 0, len(notifiedMessage))
-	if cap(keys) != len(expectedColumns) {
-		return false
-	}
-	for _, k := range expectedColumns {
-		if _, ok := notifiedMessage[k]; !ok {
-			return false
-		}
-	}
-	return true
-}
-
-func keys(d map[string]interface{}) []string {
-	ks := make([]string, 0, len(d))
-	for k := range d {
-		ks = append(ks, k)
-	}
-	return ks
-}
-
-type notifiedColumnsHandler struct {
-	pgNEW []byte
-	pgOLD []byte
-}
-
-func (n *notifiedColumnsHandler) ConnLoss(table string) {
-	// do nothing
-}
-
-func (n *notifiedColumnsHandler) Create(table string, newBuf []byte) {
-	n.pgNEW = newBuf
-}
-
-func (n *notifiedColumnsHandler) Update(table string, oldBuf, newBuf []byte) {
-	n.pgNEW = newBuf
-	n.pgOLD = oldBuf
-}
-
-func (n *notifiedColumnsHandler) Delete(table string, oldBuf []byte) {
-	n.pgOLD = oldBuf
-}
-
-type triggerActionsHandler struct {
-	connLoss int
-	create   int
-	update   int
-	delete   int
-	t        *testing.T
-}
-
-func (tr *triggerActionsHandler) ConnLoss(table string) {
-	tr.connLoss++
-}
-
-func (tr *triggerActionsHandler) Create(table string, newBuf []byte) {
-	tr.create++
-	if len(newBuf) == 0 {
-		tr.t.Fatal("create does not receive record!")
-	}
-	tr.t.Logf("%s create: %s\n", table, newBuf)
-}
-
-func (tr *triggerActionsHandler) Update(table string, oldBuf, newBuf []byte) {
-	tr.update++
-	if len(oldBuf) == 0 {
-		tr.t.Fatal("update does not receive old record!")
-	}
-	if len(newBuf) == 0 {
-		tr.t.Fatal("update does not receive new record!")
-	}
-	tr.t.Logf("%s update: %s from: %s\n", table, newBuf, oldBuf)
-}
-
-func (tr *triggerActionsHandler) Delete(table string, oldBuf []byte) {
-	tr.delete++
-	if len(oldBuf) == 0 {
-		tr.t.Fatal("delete does not receive record!")
-	}
-	tr.t.Logf("%s delete: %s\n", table, oldBuf)
-}
-
-type initiedHandler struct {
-	rows int64
-}
-
-func (i *initiedHandler) ConnLoss(table string) {
-	time.Sleep(1 * time.Second)
-	i.rows = 1
-}
-
-func (i *initiedHandler) Create(table string, newBuf []byte) {
-
-}
-
-func (i *initiedHandler) Update(table string, oldBuf, newBuf []byte) {
-
-}
-
-func (i *initiedHandler) Delete(table string, oldBuf []byte) {
-
 }

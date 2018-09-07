@@ -6,13 +6,13 @@ package pgnotify
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/lovego/errs"
 	"github.com/lovego/logger"
-	"github.com/pkg/errors"
 )
 
 type Handler interface {
@@ -62,11 +62,11 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	return n, nil
 }
 
-func (n *Notifier) Notify(table string, expectedColumns []string, handler Handler) error {
+func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
 	if _, ok := n.handlers[table]; ok {
-		return errors.Errorf("pgnotify: the triiger of table '%s' has exist", table)
+		return fmt.Errorf("pgnotify: the triiger of table '%s' has exist", table)
 	}
-	if err := createTriggerIfNotExists(n.db, table, expectedColumns); err != nil {
+	if err := createTrigger(n.db, table, columnsToNotify, columnsToCheck); err != nil {
 		return err
 	}
 	n.handlers[table] = handler
