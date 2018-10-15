@@ -62,6 +62,10 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	return n, nil
 }
 
+func (n *Notifier) DB() *sql.DB {
+	return n.db
+}
+
 func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
 	if _, ok := n.handlers[table]; ok {
 		return fmt.Errorf("pgnotify: the trigger of table '%s' aready exists.", table)
