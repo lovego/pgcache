@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -45,7 +46,11 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 		return nil, errs.Trace(err)
 	}
 	db.SetConnMaxLifetime(time.Minute)
-	db.SetMaxIdleConns(1)
+	if os.Getenv("GOENV") == "production" {
+		db.SetMaxIdleConns(1)
+	} else {
+		db.SetMaxIdleConns(0)
+	}
 	db.SetMaxOpenConns(1)
 
 	if err := createPGFunction(db); err != nil {
