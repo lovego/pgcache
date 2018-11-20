@@ -65,7 +65,7 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 		handlers: make(map[string]Handler),
 		inited:   make(map[string]chan struct{}),
 	}
-	n.listener = pq.NewListener(dbAddr, time.Nanosecond, time.Minute, n.eventLogger)
+	n.listener = pq.NewListener(dbAddr, time.Second, time.Minute, n.eventLogger)
 	go n.listen()
 	return n, nil
 }
