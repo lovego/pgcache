@@ -1,17 +1,21 @@
 package pgnotify
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lovego/errs"
 )
 
 func createPGFunction(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	// tg_argv[0] 是需要通知的字段列表
 	// tg_argv[1] 是需要检查是否有变动的字段列表，仅在更新时使用
-	_, err := db.Exec(`
+	_, err := db.ExecContext(ctx, `
     create or replace function pgnotify() returns trigger as $$
     declare
       old_record record;
@@ -53,17 +57,28 @@ func createPGFunction(db *sql.DB) error {
 
 func createTrigger(db *sql.DB, table string, columnsToNotify, columnsToCheck string) error {
 	trigger := fmt.Sprintf("%s_pgnotify", table)
-	_, err := db.Exec(fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s", trigger, table))
-	if err != nil {
-		return errs.Trace(err)
-	}
-	if _, err = db.Exec(fmt.Sprintf(
+	dropExistingTrigger(db, trigger, table)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if _, err := db.ExecContext(ctx, fmt.Sprintf(
 		`CREATE TRIGGER %s
 		 AFTER INSERT OR UPDATE OR DELETE
          ON %s FOR EACH ROW
          EXECUTE PROCEDURE pgnotify(%s, %s)`,
 		trigger, table, quote(columnsToNotify), quote(columnsToCheck)),
 	); err != nil {
+		return errs.Trace(err)
+	}
+	return nil
+}
+
+func dropExistingTrigger(db *sql.DB, trigger, table string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := db.ExecContext(ctx, fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s", trigger, table))
+	if err != nil {
 		return errs.Trace(err)
 	}
 	return nil

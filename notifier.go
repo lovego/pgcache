@@ -4,6 +4,7 @@
 package pgnotify
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -42,7 +43,9 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	if err != nil {
 		return nil, errs.Trace(err)
 	}
-	if err := db.Ping(); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
 		return nil, errs.Trace(err)
 	}
 	db.SetConnMaxLifetime(time.Minute)
