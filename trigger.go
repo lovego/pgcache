@@ -45,7 +45,7 @@ func createPGFunction(db *sql.DB) error {
         data := jsonb_set(data, array['old'], to_jsonb(old_record));
       end case;
 
-      perform pg_notify('pgnotify_' || tg_table_name, data::text);
+      perform pg_notify('pgnotify_' || tg_table_schema || '.' || tg_table_name, data::text);
       return null;
     end;
     $$ language plpgsql;`)
@@ -56,7 +56,7 @@ func createPGFunction(db *sql.DB) error {
 }
 
 func createTrigger(db *sql.DB, table string, columnsToNotify, columnsToCheck string) error {
-	trigger := fmt.Sprintf("%s_pgnotify", table)
+	trigger := fmt.Sprintf("%s_pgnotify", strings.Replace(table, ".", "_", -1))
 	dropExistingTrigger(db, trigger, table)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

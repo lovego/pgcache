@@ -43,7 +43,7 @@ func ExampleNotifier() {
 		return
 	}
 	if err := notifier.Notify(
-		"students",
+		"public.students",
 		"$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
 		"$1.id, $1.name",
 		testHandler{},
@@ -74,13 +74,13 @@ func ExampleNotifier() {
 	time.Sleep(10 * time.Millisecond)
 
 	// Output:
-	// ConnLoss students
-	// Create students
+	// ConnLoss public.students
+	// Create public.students
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
-	// Update students
+	// Update public.students
 	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// Delete students
+	// Delete public.students
 	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
 
 }
