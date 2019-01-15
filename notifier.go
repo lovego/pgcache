@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -25,7 +24,7 @@ type Handler interface {
 }
 
 type Notifier struct {
-	db       *sql.DB
+	db       *sql.DB // db to create func and triggers
 	listener *pq.Listener
 	logger   *logger.Logger
 	handlers map[string]Handler
@@ -39,23 +38,10 @@ type message struct {
 }
 
 func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
-	db, err := sql.Open(`postgres`, dbAddr)
+	db, err := getDb(dbAddr)
 	if err != nil {
-		return nil, errs.Trace(err)
+		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		return nil, errs.Trace(err)
-	}
-	db.SetConnMaxLifetime(time.Minute)
-	if os.Getenv("GOENV") == "production" {
-		db.SetMaxIdleConns(1)
-	} else {
-		db.SetMaxIdleConns(0)
-	}
-	db.SetMaxOpenConns(1)
-
 	if err := createPGFunction(db); err != nil {
 		return nil, err
 	}
@@ -68,10 +54,6 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	n.listener = pq.NewListener(dbAddr, time.Second, time.Minute, n.eventLogger)
 	go n.listen()
 	return n, nil
-}
-
-func (n *Notifier) DB() *sql.DB {
-	return n.db
 }
 
 func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
@@ -143,4 +125,26 @@ func (n *Notifier) eventLogger(event pq.ListenerEventType, err error) {
 	if err != nil {
 		n.logger.Error(event, err)
 	}
+}
+
+func (n *Notifier) DB() *sql.DB {
+	return n.db
+}
+
+func getDb(dbAddr string) (*sql.DB, error) {
+	db, err := sql.Open(`postgres`, dbAddr)
+	if err != nil {
+		return nil, errs.Trace(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		return nil, errs.Trace(err)
+	}
+	db.SetConnMaxLifetime(time.Minute)
+	// don't keep idle connections. only used to create func and triggers.
+	db.SetMaxIdleConns(0)
+	db.SetMaxOpenConns(1)
+
+	return db, nil
 }
