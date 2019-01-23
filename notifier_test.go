@@ -31,6 +31,29 @@ func (h testHandler) Delete(table string, oldBuf []byte) {
 }
 
 func ExampleNotifier() {
+	testCreateUpdateDelete("students")
+	testCreateUpdateDelete("public.students")
+
+	// Output:
+	// ConnLoss public.students
+	// Create public.students
+	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	// Update public.students
+	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
+	// Delete public.students
+	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
+	// ConnLoss public.students
+	// Create public.students
+	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	// Update public.students
+	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
+	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
+	// Delete public.students
+	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
+}
+
+func testCreateUpdateDelete(table string) {
 	db, err := sql.Open(`postgres`, getTestDataSource())
 	if err != nil {
 		panic(err)
@@ -42,8 +65,8 @@ func ExampleNotifier() {
 		fmt.Println(errs.WithStack(err))
 		return
 	}
-	if err := notifier.Notify(
-		"public.students",
+	if err := notifier.Listen(
+		table,
 		"$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
 		"$1.id, $1.name",
 		testHandler{},
@@ -72,17 +95,9 @@ func ExampleNotifier() {
 	}
 
 	time.Sleep(10 * time.Millisecond)
-
-	// Output:
-	// ConnLoss public.students
-	// Create public.students
-	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
-	// Update public.students
-	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
-	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// Delete public.students
-	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
-
+	if err := notifier.Unlisten(table); err != nil {
+		panic(err)
+	}
 }
 
 func createStudentsTable(db *sql.DB) {

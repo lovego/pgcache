@@ -52,11 +52,14 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 		inited:   make(map[string]chan struct{}),
 	}
 	n.listener = pq.NewListener(dbAddr, time.Second, time.Minute, n.eventLogger)
-	go n.listen()
+	go n.loop()
 	return n, nil
 }
 
-func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
+func (n *Notifier) Listen(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
+	if strings.IndexByte(table, '.') < 0 {
+		table = "public." + table
+	}
 	if _, ok := n.handlers[table]; ok {
 		return fmt.Errorf("pgnotify: the trigger of table '%s' aready exists.", table)
 	}
@@ -74,7 +77,25 @@ func (n *Notifier) Notify(table string, columnsToNotify, columnsToCheck string, 
 	return nil
 }
 
-func (n *Notifier) listen() {
+func (n *Notifier) Unlisten(table string) error {
+	if strings.IndexByte(table, '.') < 0 {
+		table = "public." + table
+	}
+	channel := "pgnotify_" + table
+	if err := n.listener.Unlisten(channel); err != nil {
+		return errs.Trace(err)
+	}
+	return nil
+}
+
+func (n *Notifier) UnlistenAll() error {
+	if err := n.listener.UnlistenAll(); err != nil {
+		return errs.Trace(err)
+	}
+	return nil
+}
+
+func (n *Notifier) loop() {
 	for {
 		select {
 		case notice := <-n.listener.Notify:
