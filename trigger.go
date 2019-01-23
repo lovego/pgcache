@@ -56,28 +56,26 @@ func createPGFunction(db *sql.DB) error {
 }
 
 func createTrigger(db *sql.DB, table string, columnsToNotify, columnsToCheck string) error {
-	trigger := fmt.Sprintf("%s_pgnotify", strings.Replace(table, ".", "_", -1))
-	dropExistingTrigger(db, trigger, table)
+	dropExistingTrigger(db, table)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if _, err := db.ExecContext(ctx, fmt.Sprintf(
-		`CREATE TRIGGER %s
-		 AFTER INSERT OR UPDATE OR DELETE
-         ON %s FOR EACH ROW
-         EXECUTE PROCEDURE pgnotify(%s, %s)`,
-		trigger, table, quote(columnsToNotify), quote(columnsToCheck)),
+		`CREATE TRIGGER pgnotify AFTER INSERT OR UPDATE OR DELETE
+    ON %s
+    FOR EACH ROW EXECUTE PROCEDURE pgnotify(%s, %s)`,
+		table, quote(columnsToNotify), quote(columnsToCheck)),
 	); err != nil {
 		return errs.Trace(err)
 	}
 	return nil
 }
 
-func dropExistingTrigger(db *sql.DB, trigger, table string) error {
+func dropExistingTrigger(db *sql.DB, table string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	_, err := db.ExecContext(ctx, fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s", trigger, table))
+	_, err := db.ExecContext(ctx, fmt.Sprintf("DROP TRIGGER IF EXISTS pgnotify ON %s", table))
 	if err != nil {
 		return errs.Trace(err)
 	}
