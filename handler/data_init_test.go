@@ -13,6 +13,17 @@ type Score struct {
 	ScoreFloat float32
 }
 
+func (s Score) Valid() bool {
+	return s.Score >= 0
+}
+
+func (s *Score) Valid2() bool {
+	return s.Score >= 0
+}
+
+func (s *Score) Other() {
+}
+
 func ExampleData_init_nilMutex() {
 	defer func() {
 		fmt.Println(recover())
@@ -206,7 +217,20 @@ func ExampleData_init_invalidSortedSetUniqueKey_5() {
 	// Data.SortedSetUniqueKey[0]: ScoreFloat, should be a integer or string type.
 }
 
-func ExampleData_init_flags() {
+func ExampleData_init_flags1() {
+	mutex := sync.RWMutex{}
+	var m map[int]map[string][]*int
+	d := Data{
+		RWMutex: &mutex,
+		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+	}
+	d.init(reflect.TypeOf(Score{}))
+	fmt.Println(d.isSortedSets, d.realValueIsPointer)
+	// Output:
+	// true true
+}
+
+func ExampleData_init_flags2() {
 	mutex := sync.RWMutex{}
 	var m map[int][]*Score
 	d := Data{
@@ -218,4 +242,64 @@ func ExampleData_init_flags() {
 	fmt.Println(d.isSortedSets, d.realValueIsPointer)
 	// Output:
 	// true true
+}
+
+func ExampleData_init_invalidPrecondMethod_1() {
+	defer func() {
+		fmt.Println(recover())
+	}()
+	mutex := sync.RWMutex{}
+	var m map[int]Score
+	d := Data{
+		RWMutex: &mutex,
+		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		PrecondMethod: "None",
+	}
+	d.init(reflect.TypeOf(Score{}))
+	// Output:
+	// Data.PrecondMethod: None, no such method for the row struct.
+}
+
+func ExampleData_init_invalidPrecondMethod_2() {
+	defer func() {
+		fmt.Println(recover())
+	}()
+	mutex := sync.RWMutex{}
+	var m map[int]Score
+	d := Data{
+		RWMutex: &mutex,
+		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		PrecondMethod: "Other",
+	}
+	d.init(reflect.TypeOf(Score{}))
+	// Output:
+	// Data.PrecondMethod: Other, should be of "func () bool" form.
+}
+
+func ExampleData_init_validPrecondMethod_1() {
+	mutex := sync.RWMutex{}
+	var m map[int]Score
+	d := Data{
+		RWMutex: &mutex,
+		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		PrecondMethod: "Valid",
+	}
+	d.init(reflect.TypeOf(Score{}))
+	fmt.Println(d.precondMethodIndex)
+	// Output:
+	// 1
+}
+
+func ExampleData_init_validPrecondMethod_2() {
+	mutex := sync.RWMutex{}
+	var m map[int]Score
+	d := Data{
+		RWMutex: &mutex,
+		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		PrecondMethod: "Valid2",
+	}
+	d.init(reflect.TypeOf(Score{}))
+	fmt.Println(d.precondMethodIndex)
+	// Output:
+	// 2
 }

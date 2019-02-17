@@ -24,6 +24,7 @@ func (d *Data) init(rowStruct reflect.Type) {
 	}
 	valueType := d.checkMapValue(rowStruct, innerType)
 	d.checkSortedSetUniqueKey(valueType)
+	d.checkPrecondMethod(rowStruct)
 }
 
 func (d *Data) checkMapKeys(rowStruct reflect.Type) reflect.Type {
@@ -107,4 +108,20 @@ func (d *Data) checkSortedSetUniqueKey(valueType reflect.Type) {
 			log.Panicf("Data.SortedSetUniqueKey[%d]: %s, no such field in value struct.", i, name)
 		}
 	}
+}
+
+func (d *Data) checkPrecondMethod(rowStruct reflect.Type) {
+	if d.PrecondMethod == "" {
+		d.precondMethodIndex = -1
+		return
+	}
+	method, ok := reflect.PtrTo(rowStruct).MethodByName(d.PrecondMethod)
+	if !ok {
+		log.Panicf("Data.PrecondMethod: %s, no such method for the row struct.", d.PrecondMethod)
+	}
+	typ := method.Type
+	if typ.NumIn() != 1 || typ.NumOut() != 1 || typ.Out(0) != reflect.TypeOf(true) {
+		log.Panicf(`Data.PrecondMethod: %s, should be of "func () bool" form.`, d.PrecondMethod)
+	}
+	d.precondMethodIndex = method.Index
 }

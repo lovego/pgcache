@@ -9,16 +9,21 @@ import (
 
 type Data struct {
 	*sync.RWMutex
-	// a pointer to a map to store data
+	// MapPtr is a pointer to a map to store data, required.
 	MapPtr interface{}
-	// field name to get map keys from row struct
+	// MapKeys is the field names to get map keys from row struct, required.
 	MapKeys []string
-	// field name to get map value from row struct, leave this empty to use whole row.
+	// MapValue is the field name to get map value from row struct.
+	// If it's empty, the row struct is use as map value.
 	MapValue string
 
-	// if the map value is a slice, it's used as sorted set.
-	// if it's a sorted set of struct, use the {SortedSetStructUniqueKey} fields as unique key.
+	// If the map value is a slice, it's used as sorted set. If it's a sorted set of struct,
+	// SortedSetUniqueKey is required, it specifies the fields used as unique key.
 	SortedSetUniqueKey []string
+
+	// PrecondMethod is optional. It's a method name of row struct. It should be of "func () bool" form.
+	// It is called before handling, if the return value is false, no handling is performed.
+	PrecondMethod string
 
 	// the map value to store data
 	mapV reflect.Value
@@ -26,9 +31,19 @@ type Data struct {
 	isSortedSets bool
 	// real map value is a pointer of the row struct or row struct's {MapValue} field.
 	realValueIsPointer bool
+	// negative if no PrecondMethod present.
+	precondMethodIndex int
+}
+
+func (d *Data) precond(row reflect.Value) bool {
+	out := row.Method(d.precondMethodIndex).Call(nil)
+	return out[0].Bool()
 }
 
 func (d *Data) save(row reflect.Value) {
+	if d.precondMethodIndex >= 0 && !d.precond(row) {
+		return
+	}
 	d.Lock()
 	defer d.Unlock()
 
@@ -58,6 +73,9 @@ func (d *Data) save(row reflect.Value) {
 }
 
 func (d *Data) remove(row reflect.Value) {
+	if d.precondMethodIndex >= 0 && !d.precond(row) {
+		return
+	}
 	d.Lock()
 	defer d.Unlock()
 
