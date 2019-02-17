@@ -17,9 +17,9 @@ import (
 )
 
 type Handler interface {
-	Create(table string, buf []byte)
-	Update(table string, oldBuf, newBuf []byte)
-	Delete(table string, buf []byte)
+	Create(table string, content []byte)
+	Update(table string, oldContent, newContent []byte)
+	Delete(table string, content []byte)
 	ConnLoss(table string)
 }
 
