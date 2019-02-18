@@ -13,8 +13,15 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/lovego/errs"
-	"github.com/lovego/logger"
 )
+
+type Notifier struct {
+	db       *sql.DB // db to create func and triggers
+	listener *pq.Listener
+	logger   Logger
+	handlers map[string]Handler
+	inited   map[string]chan struct{}
+}
 
 type Handler interface {
 	Create(table string, content []byte)
@@ -23,12 +30,16 @@ type Handler interface {
 	ConnLoss(table string)
 }
 
-type Notifier struct {
-	db       *sql.DB // db to create func and triggers
-	listener *pq.Listener
-	logger   *logger.Logger
-	handlers map[string]Handler
-	inited   map[string]chan struct{}
+type TableHandler interface {
+	Handler
+	TableName() string
+	Columns() string
+	CheckColumns() string
+}
+
+type Logger interface {
+	Error(args ...interface{})
+	Errorf(format string, args ...interface{})
 }
 
 type message struct {
@@ -37,7 +48,7 @@ type message struct {
 	New    json.RawMessage
 }
 
-func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
+func New(dbAddr string, logger Logger) (*Notifier, error) {
 	db, err := getDb(dbAddr)
 	if err != nil {
 		return nil, err
@@ -56,14 +67,21 @@ func New(dbAddr string, logger *logger.Logger) (*Notifier, error) {
 	return n, nil
 }
 
-func (n *Notifier) Listen(table string, columnsToNotify, columnsToCheck string, handler Handler) error {
+func (n *Notifier) Notify(handler TableHandler) error {
+	return n.Listen(handler.TableName(), handler.Columns(), handler.CheckColumns(), handler)
+}
+
+// Listen a table, and send "columns" to the handler when a row is created/updated/deleted.
+// When a row is Updated, only if some "checkColumns" has changed, the "columns" will be send to
+// the handler.
+func (n *Notifier) Listen(table string, columns, checkColumns string, handler Handler) error {
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
 	if _, ok := n.handlers[table]; ok {
 		return fmt.Errorf("pgnotify: the trigger of table '%s' aready exists.", table)
 	}
-	if err := createTrigger(n.db, table, columnsToNotify, columnsToCheck); err != nil {
+	if err := createTrigger(n.db, table, columns, checkColumns); err != nil {
 		return err
 	}
 	n.handlers[table] = handler

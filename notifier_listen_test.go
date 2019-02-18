@@ -30,7 +30,7 @@ func (h testHandler) Delete(table string, oldBuf []byte) {
 	fmt.Printf("Delete %s\n  %s\n", table, oldBuf)
 }
 
-func ExampleNotifier() {
+func ExampleNotifier_Listen() {
 	testCreateUpdateDelete("students")
 	testCreateUpdateDelete("public.students")
 

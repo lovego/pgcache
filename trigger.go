@@ -55,15 +55,18 @@ func createPGFunction(db *sql.DB) error {
 	return nil
 }
 
-func createTrigger(db *sql.DB, table string, columnsToNotify, columnsToCheck string) error {
+func createTrigger(db *sql.DB, table string, columns, checkColumns string) error {
 	dropExistingTrigger(db, table)
+
+	columns = dollarPrefix(columns)
+	checkColumns = dollarPrefix(checkColumns)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if _, err := db.ExecContext(ctx, fmt.Sprintf(
 		`CREATE TRIGGER pgnotify AFTER INSERT OR UPDATE OR DELETE ON %s
     FOR EACH ROW EXECUTE PROCEDURE pgnotify(%s, %s)`,
-		table, quote(columnsToNotify), quote(columnsToCheck)),
+		table, quote(columns), quote(checkColumns)),
 	); err != nil {
 		return errs.Trace(err)
 	}
@@ -83,4 +86,15 @@ func dropExistingTrigger(db *sql.DB, table string) error {
 
 func quote(q string) string {
 	return "'" + strings.Replace(q, "'", "''", -1) + "'"
+}
+
+func dollarPrefix(columns string) string {
+	if strings.Index(columns, "$1.") >= 0 {
+		return columns
+	}
+	var result []string
+	for _, column := range strings.Split(columns, ",") {
+		result = append(result, "$1."+strings.TrimSpace(column))
+	}
+	return strings.Join(result, ",")
 }

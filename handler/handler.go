@@ -7,10 +7,10 @@ import (
 )
 
 type Handler struct {
+	table     Table
 	rowStruct reflect.Type
 	datas     []*Data
 	dbQuerier DBQuerier
-	loadSql   string
 	logger    Logger
 }
 
@@ -24,12 +24,13 @@ type Logger interface {
 }
 
 func New(
-	rowStruct interface{}, datas []Data, db DBQuerier, loadSql string, logger Logger,
+	table Table, rowStruct interface{}, datas []Data, db DBQuerier, logger Logger,
 ) *Handler {
 	var rowStrct = reflect.TypeOf(rowStruct)
 	if rowStrct.Kind() != reflect.Struct {
 		log.Panic("rowStruct is not a struct")
 	}
+	table.init(rowStrct)
 	var initedDatas []*Data
 	for i := range datas {
 		datas[i].init(rowStrct)
@@ -40,10 +41,10 @@ func New(
 	}
 
 	return &Handler{
+		table:     table,
 		rowStruct: rowStrct,
 		datas:     initedDatas,
 		dbQuerier: db,
-		loadSql:   loadSql,
 		logger:    logger,
 	}
 }
@@ -63,7 +64,7 @@ func (h *Handler) Delete(table string, content []byte) {
 
 func (h *Handler) ConnLoss(table string) {
 	var rows = reflect.New(reflect.SliceOf(h.rowStruct)).Elem()
-	if err := h.dbQuerier.Query(rows.Addr().Interface(), h.loadSql); err != nil {
+	if err := h.dbQuerier.Query(rows.Addr().Interface(), h.table.LoadSql); err != nil {
 		h.logger.Error(err)
 		return
 	}
@@ -107,4 +108,16 @@ func (h *Handler) Save(rows interface{}) {
 			d.save(row)
 		}
 	}
+}
+
+func (h *Handler) TableName() string {
+	return h.table.Name
+}
+
+func (h *Handler) Columns() string {
+	return h.table.Columns
+}
+
+func (h *Handler) CheckColumns() string {
+	return h.table.CheckColumns
 }

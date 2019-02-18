@@ -26,10 +26,10 @@ func ExampleHandler() {
 	var m2 map[string]map[int]int
 
 	var mutex sync.RWMutex
-	h := New(Score{}, []Data{
+	h := New(Table{Name: "scores"}, Score{}, []Data{
 		{RWMutex: &mutex, MapPtr: &m1, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score"},
 		{RWMutex: &mutex, MapPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, MapValue: "Score"},
-	}, testQuerier{}, "", testLogger)
+	}, testQuerier{}, testLogger)
 
 	h.ConnLoss("")
 	fmt.Println(m1, m2)
