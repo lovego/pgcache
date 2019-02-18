@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/lovego/logger"
+	"github.com/lovego/maps"
 )
 
 var testLogger = logger.New(os.Stdout)
@@ -32,33 +33,33 @@ func ExampleHandler() {
 	}, testQuerier{}, testLogger)
 
 	h.ConnLoss("")
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	h.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	h.Update("",
 		[]byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`),
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	h.Delete("",
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	h.Clear()
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	h.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
-	fmt.Println(m1, m2)
+	maps.Println(m1, m2)
 
 	// Output:
 	// map[1000:map[语文:90]] map[语文:map[1000:90]]
 	// map[1000:map[语文:90] 1001:map[语文:95]] map[语文:map[1000:90 1001:95]]
-	// map[1000:map[语文:90] 1001:map[数学:96]] map[语文:map[1000:90] 数学:map[1001:96]]
-	// map[1000:map[语文:90] 1001:map[]] map[语文:map[1000:90] 数学:map[]]
+	// map[1000:map[语文:90] 1001:map[数学:96]] map[数学:map[1001:96] 语文:map[1000:90]]
+	// map[1000:map[语文:90] 1001:map[]] map[数学:map[] 语文:map[1000:90]]
 	// map[] map[]
 	// map[1001:map[语文:95]] map[语文:map[1001:95]]
 }
