@@ -36,7 +36,7 @@ type Data struct {
 }
 
 func (d *Data) precond(row reflect.Value) bool {
-	out := row.Method(d.precondMethodIndex).Call(nil)
+	out := row.Addr().Method(d.precondMethodIndex).Call(nil)
 	return out[0].Bool()
 }
 
@@ -48,12 +48,17 @@ func (d *Data) save(row reflect.Value) {
 	defer d.Unlock()
 
 	mapV := d.mapV
+	if mapV.IsNil() {
+		mapV.Set(reflect.MakeMap(mapV.Type()))
+	}
 	for i := 0; i < len(d.MapKeys)-1; i++ {
 		key := row.FieldByName(d.MapKeys[i])
 		value := mapV.MapIndex(key)
-		if !value.IsValid() || value.IsNil() {
+		if !value.IsValid() {
 			value = reflect.MakeMap(mapV.Type().Elem())
 			mapV.SetMapIndex(key, value)
+		} else if value.IsNil() {
+			value.Set(reflect.MakeMap(mapV.Type().Elem()))
 		}
 		mapV = value
 	}
@@ -82,7 +87,7 @@ func (d *Data) remove(row reflect.Value) {
 	mapV := d.mapV
 	for i := 0; i < len(d.MapKeys)-1; i++ {
 		key := row.FieldByName(d.MapKeys[i])
-		mapV := mapV.MapIndex(key)
+		mapV = mapV.MapIndex(key)
 		if !mapV.IsValid() || mapV.IsNil() {
 			return
 		}
@@ -101,7 +106,7 @@ func (d *Data) remove(row reflect.Value) {
 		if !slice.IsValid() || slice.Len() == 0 {
 			mapV.SetMapIndex(key, reflect.Value{})
 		} else {
-			mapV.SetMapIndex(key, value)
+			mapV.SetMapIndex(key, slice)
 		}
 	} else {
 		mapV.SetMapIndex(key, reflect.Value{})

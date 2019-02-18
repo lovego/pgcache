@@ -6,24 +6,6 @@ import (
 	"sync"
 )
 
-type Score struct {
-	StudentId  int
-	Subject    string
-	Score      int
-	ScoreFloat float32
-}
-
-func (s Score) Valid() bool {
-	return s.Score >= 0
-}
-
-func (s *Score) Valid2() bool {
-	return s.Score >= 0
-}
-
-func (s *Score) Other() {
-}
-
 func ExampleData_init_nilMutex() {
 	defer func() {
 		fmt.Println(recover())
@@ -206,13 +188,17 @@ func ExampleData_init_invalidSortedSetUniqueKey_5() {
 		fmt.Println(recover())
 	}()
 	mutex := sync.RWMutex{}
-	var m map[int][]Score
+	type Score2 struct {
+		Score
+		ScoreFloat float32
+	}
+	var m map[int][]Score2
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{"ScoreFloat"},
 	}
-	d.init(reflect.TypeOf(Score{}))
+	d.init(reflect.TypeOf(Score2{}))
 	// Output:
 	// Data.SortedSetUniqueKey[0]: ScoreFloat, should be a integer or string type.
 }

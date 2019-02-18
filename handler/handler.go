@@ -23,24 +23,28 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-func New(rowStruct interface{}, datas []Data, db DBQuerier, loadSql string) *Handler {
+func New(
+	rowStruct interface{}, datas []Data, db DBQuerier, loadSql string, logger Logger,
+) *Handler {
 	var rowStrct = reflect.TypeOf(rowStruct)
 	if rowStrct.Kind() != reflect.Struct {
 		log.Panic("rowStruct is not a struct")
 	}
 	var initedDatas []*Data
-	for _, data := range datas {
-		data.init(rowStrct)
-		initedDatas = append(initedDatas, &data)
+	for i := range datas {
+		datas[i].init(rowStrct)
+		initedDatas = append(initedDatas, &datas[i])
 	}
 	if len(initedDatas) == 0 {
 		log.Panic("datas is empty")
 	}
 
 	return &Handler{
-		loadSql:   loadSql,
 		rowStruct: rowStrct,
 		datas:     initedDatas,
+		dbQuerier: db,
+		loadSql:   loadSql,
+		logger:    logger,
 	}
 }
 
