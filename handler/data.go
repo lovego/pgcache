@@ -72,7 +72,7 @@ func (d *Data) save(row reflect.Value) {
 		value = value.Addr()
 	}
 	if d.isSortedSets {
-		value = sorted_sets.Save(mapV.MapIndex(key), value, d.SortedSetUniqueKey...)
+		value = sorted_sets.SaveValue(mapV.MapIndex(key), value, d.SortedSetUniqueKey...)
 	}
 	mapV.SetMapIndex(key, value)
 }
@@ -102,7 +102,7 @@ func (d *Data) remove(row reflect.Value) {
 		if d.MapValue != "" {
 			value = row.FieldByName(d.MapValue)
 		}
-		slice = sorted_sets.Remove(slice, value, d.SortedSetUniqueKey...)
+		slice = sorted_sets.RemoveValue(slice, value, d.SortedSetUniqueKey...)
 		if !slice.IsValid() || slice.Len() == 0 {
 			mapV.SetMapIndex(key, reflect.Value{})
 		} else {
