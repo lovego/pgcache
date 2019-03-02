@@ -53,8 +53,8 @@ func traverseStructFields(typ reflect.Type, fn func(field reflect.StructField)) 
 	}
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
-		// exported field has an empty PkgPath
-		if (!field.Anonymous || !traverseStructFields(field.Type, fn)) && field.PkgPath == "" {
+		if (!field.Anonymous || !traverseStructFields(field.Type, fn)) &&
+			(field.Name[0] >= 'A' && field.Name[0] <= 'Z') {
 			fn(field)
 		}
 	}
