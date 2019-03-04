@@ -14,7 +14,7 @@ type Data struct {
 	// MapKeys is the field names to get map keys from row struct, required.
 	MapKeys []string
 	// MapValue is the field name to get map value from row struct.
-	// If it's empty, the row struct is use as map value.
+	// If it's empty, the whole row struct is used as map value.
 	MapValue string
 
 	// If the map value is a slice, it's used as sorted set. If it's a sorted set of struct,
