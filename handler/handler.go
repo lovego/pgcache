@@ -63,13 +63,19 @@ func (h *Handler) Delete(table string, content []byte) {
 }
 
 func (h *Handler) ConnLoss(table string) {
+	if err := h.Reload(); err != nil {
+		h.logger.Error(err)
+	}
+}
+
+func (h *Handler) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(h.rowStruct)).Elem()
 	if err := h.dbQuerier.Query(rows.Addr().Interface(), h.table.LoadSql); err != nil {
-		h.logger.Error(err)
-		return
+		return err
 	}
 	h.Clear()
 	h.Save(rows.Interface())
+	return nil
 }
 
 func (h *Handler) save(content []byte) {
