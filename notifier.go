@@ -79,7 +79,7 @@ func (n *Notifier) Listen(table string, columns, checkColumns string, handler Ha
 		table = "public." + table
 	}
 	if _, ok := n.handlers[table]; ok {
-		return fmt.Errorf("pgnotify: the trigger of table '%s' aready exists.", table)
+		return fmt.Errorf("pgnotify: table '%s' is aready listened.", table)
 	}
 	if err := createTrigger(n.db, table, columns, checkColumns); err != nil {
 		return err
