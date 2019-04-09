@@ -116,6 +116,16 @@ func (h *Handler) Save(rows interface{}) {
 	}
 }
 
+func (h *Handler) Remove(rows interface{}) {
+	rowsV := reflect.ValueOf(rows)
+	for i := 0; i < rowsV.Len(); i++ {
+		row := rowsV.Index(i)
+		for _, d := range h.datas {
+			d.remove(row)
+		}
+	}
+}
+
 func (h *Handler) TableName() string {
 	return h.table.Name
 }
