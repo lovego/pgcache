@@ -10,10 +10,10 @@ import (
 	"github.com/lovego/bsql"
 	"github.com/lovego/errs"
 	loggerPkg "github.com/lovego/logger"
-	"github.com/lovego/pgnotify/handler"
+	"github.com/lovego/pgnotify/pghandler"
 )
 
-type Student struct {
+type StudentRow struct {
 	Id         int64
 	Name, Time string
 }
@@ -25,13 +25,13 @@ func ExampleNotifier_Notify() {
 	}
 
 	var mutex sync.RWMutex
-	var m map[int64]Student
+	var m map[int64]StudentRow
 	var logger = loggerPkg.New(os.Stderr)
-	var h = handler.New(handler.Table{
+	var handler = pghandler.New(pghandler.Table{
 		Name:         "students",
 		Columns:      "$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
 		CheckColumns: "$1.id, $1.name",
-	}, Student{}, []handler.Data{
+	}, StudentRow{}, []pghandler.Data{
 		{RWMutex: &mutex, MapPtr: &m, MapKeys: []string{"Id"}},
 	}, bsql.New(db, time.Second), logger)
 
@@ -41,7 +41,7 @@ func ExampleNotifier_Notify() {
 		fmt.Println(errs.WithStack(err))
 		return
 	}
-	if err := notifier.Notify(h); err != nil {
+	if err := notifier.Notify(handler); err != nil {
 		panic(errs.WithStack(err))
 	}
 

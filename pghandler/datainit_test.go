@@ -1,4 +1,4 @@
-package handler
+package pghandler
 
 import (
 	"fmt"
