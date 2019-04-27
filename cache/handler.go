@@ -24,8 +24,8 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-// New return a cache handler
-// Param table is the table to cache
+// New return a cache handler.
+// Param table is the table to cache.
 // Param rowStruct is the struct to receive a table row.
 // Param datas is the maps to store all table rows.
 // Param db and logger are interfaces to do db query and error logging.
