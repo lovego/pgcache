@@ -8,7 +8,7 @@ import (
 	"github.com/lovego/bsql"
 	"github.com/lovego/errs"
 	"github.com/lovego/pglistener"
-	"github.com/lovego/pglistener/pghandler"
+	"github.com/lovego/pglistener/cache"
 )
 
 type StudentRow struct {
@@ -75,11 +75,11 @@ func ExampleListener_ListenTable() {
 
 func getHandler(mapPtr interface{}) pglistener.TableHandler {
 	var mutex sync.RWMutex
-	return pghandler.New(pghandler.Table{
+	return cache.New(cache.Table{
 		Name:         "students",
 		Columns:      "$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
 		CheckColumns: "$1.id, $1.name",
-	}, StudentRow{}, []pghandler.Data{
+	}, StudentRow{}, []cache.Data{
 		{RWMutex: &mutex, MapPtr: mapPtr, MapKeys: []string{"Id"}},
 	}, bsql.New(testDB, time.Second), logger)
 }

@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"reflect"
 )
 
+// A Handler to cache table data.
 type Handler struct {
 	table     Table
 	rowStruct reflect.Type
@@ -23,6 +24,11 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
+// New return a cache handler
+// Param table is the table to cache
+// Param rowStruct is the struct to receive a table row.
+// Param datas is the maps to store all table rows.
+// Param db and logger are interfaces to do db query and error logging.
 func New(
 	table Table, rowStruct interface{}, datas []Data, db DBQuerier, logger Logger,
 ) *Handler {

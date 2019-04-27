@@ -25,7 +25,7 @@ import (
     loggerPkg "github.com/lovego/logger"
     "github.com/lovego/maps"
     "github.com/lovego/pglistener"
-    "github.com/lovego/pglistener/pghandler"
+    "github.com/lovego/pglistener/cache"
 )
 
 var dbUrl = "postgres://postgres:@localhost/test?sslmode=disable"
@@ -124,7 +124,7 @@ VALUES
 func getTableHandler(studentsMap, classesMap interface{}) pglistener.TableHandler {
     var mutex sync.RWMutex
 
-    return pghandler.New(pghandler.Table{Name: "students"}, Student{}, []pghandler.Data{
+    return cache.New(cache.Table{Name: "students"}, Student{}, []cache.Data{
         {
             RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
         }, {

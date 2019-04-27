@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"fmt"
@@ -230,7 +230,7 @@ func ExampleData_init_flags2() {
 	// true true
 }
 
-func ExampleData_init_invalidPrecondMethod_1() {
+func ExampleData_init_invalidPrecond_1() {
 	defer func() {
 		fmt.Println(recover())
 	}()
@@ -239,14 +239,14 @@ func ExampleData_init_invalidPrecondMethod_1() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "None",
+		Precond: "None",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	// Output:
-	// Data.PrecondMethod: None, no such method for the row struct.
+	// Data.Precond: None, no such method for the row struct.
 }
 
-func ExampleData_init_invalidPrecondMethod_2() {
+func ExampleData_init_invalidPrecond_2() {
 	defer func() {
 		fmt.Println(recover())
 	}()
@@ -255,20 +255,20 @@ func ExampleData_init_invalidPrecondMethod_2() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "Other",
+		Precond: "Other",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	// Output:
-	// Data.PrecondMethod: Other, should be of "func () bool" form.
+	// Data.Precond: Other, should be of "func () bool" form.
 }
 
-func ExampleData_init_validPrecondMethod_1() {
+func ExampleData_init_validPrecond_1() {
 	mutex := sync.RWMutex{}
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "Valid",
+		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	fmt.Println(d.precondMethodIndex)
@@ -276,13 +276,13 @@ func ExampleData_init_validPrecondMethod_1() {
 	// 1
 }
 
-func ExampleData_init_validPrecondMethod_2() {
+func ExampleData_init_validPrecond_2() {
 	mutex := sync.RWMutex{}
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "Valid2",
+		Precond: "Valid2",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	fmt.Println(d.precondMethodIndex)

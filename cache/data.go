@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"reflect"
@@ -21,9 +21,12 @@ type Data struct {
 	// SortedSetUniqueKey is required, it specifies the fields used as unique key.
 	SortedSetUniqueKey []string
 
-	// PrecondMethod is optional. It's a method name of row struct. It should be of "func () bool" form.
-	// It is called before handling, if the return value is false, no handling is performed.
-	PrecondMethod string
+	// Preprocess is optional. It's a method name of row struct. It should be of "func ()" form.
+	// It is called before Precond method is called.
+	Preprocess string
+	// Precond is optional. It's a method name of row struct. It should be of "func () bool" form.
+	// It is called before handling, if the return value is false, no handling(save or remove) is performed.
+	Precond string
 
 	// the map value to store data
 	mapV reflect.Value
@@ -31,17 +34,15 @@ type Data struct {
 	isSortedSets bool
 	// real map value is a pointer of the row struct or row struct's {MapValue} field.
 	realValueIsPointer bool
-	// negative if no PrecondMethod present.
+	// negative if no Preprocess present.
+	preprocessMethodIndex int
+	// negative if no Precond present.
 	precondMethodIndex int
 }
 
-func (d *Data) precond(row reflect.Value) bool {
-	out := row.Addr().Method(d.precondMethodIndex).Call(nil)
-	return out[0].Bool()
-}
-
 func (d *Data) save(row reflect.Value) {
-	if d.precondMethodIndex >= 0 && !d.precond(row) {
+	d.preprocess(row)
+	if !d.precond(row) {
 		return
 	}
 	d.Lock()
@@ -78,7 +79,8 @@ func (d *Data) save(row reflect.Value) {
 }
 
 func (d *Data) remove(row reflect.Value) {
-	if d.precondMethodIndex >= 0 && !d.precond(row) {
+	d.preprocess(row)
+	if !d.precond(row) {
 		return
 	}
 	d.Lock()
@@ -117,4 +119,19 @@ func (d *Data) clear() {
 	d.Lock()
 	defer d.Unlock()
 	d.mapV.Set(reflect.MakeMap(d.mapV.Type()))
+}
+
+func (d *Data) preprocess(row reflect.Value) {
+	if d.preprocessMethodIndex < 0 {
+		return
+	}
+	row.Addr().Method(d.precondMethodIndex).Call(nil)
+}
+
+func (d *Data) precond(row reflect.Value) bool {
+	if d.precondMethodIndex < 0 {
+		return true
+	}
+	out := row.Addr().Method(d.precondMethodIndex).Call(nil)
+	return out[0].Bool()
 }

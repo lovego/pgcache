@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"fmt"

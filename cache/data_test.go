@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func ExampleData_precond_1() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "Valid",
+		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	fmt.Println(
@@ -47,7 +47,7 @@ func ExampleData_precond_2() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
-		PrecondMethod: "Valid2",
+		Precond: "Valid2",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	fmt.Println(
@@ -63,7 +63,7 @@ func ExampleData_save_remove_clear() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"}, MapValue: "Score",
-		PrecondMethod: "Valid",
+		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	d.clear()
@@ -103,7 +103,7 @@ func ExampleData_save_remove_clear_sorted_sets() {
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"}, MapValue: "Score",
-		PrecondMethod: "Valid",
+		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	rows := reflect.ValueOf([]Score{

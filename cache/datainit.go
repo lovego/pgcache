@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"log"
@@ -24,7 +24,8 @@ func (d *Data) init(rowStruct reflect.Type) {
 	}
 	valueType := d.checkMapValue(rowStruct, innerType)
 	d.checkSortedSetUniqueKey(valueType)
-	d.checkPrecondMethod(rowStruct)
+	d.checkPreprocess(rowStruct)
+	d.checkPrecond(rowStruct)
 }
 
 func (d *Data) checkMapKeys(rowStruct reflect.Type) reflect.Type {
@@ -110,18 +111,34 @@ func (d *Data) checkSortedSetUniqueKey(valueType reflect.Type) {
 	}
 }
 
-func (d *Data) checkPrecondMethod(rowStruct reflect.Type) {
-	if d.PrecondMethod == "" {
+func (d *Data) checkPreprocess(rowStruct reflect.Type) {
+	if d.Preprocess == "" {
+		d.preprocessMethodIndex = -1
+		return
+	}
+	method, ok := reflect.PtrTo(rowStruct).MethodByName(d.Preprocess)
+	if !ok {
+		log.Panicf("Data.Preprocess: %s, no such method for the row struct.", d.Preprocess)
+	}
+	typ := method.Type
+	if typ.NumIn() != 1 || typ.NumOut() != 0 {
+		log.Panicf(`Data.Preprocess: %s, should be of "func ()" form.`, d.Preprocess)
+	}
+	d.preprocessMethodIndex = method.Index
+}
+
+func (d *Data) checkPrecond(rowStruct reflect.Type) {
+	if d.Precond == "" {
 		d.precondMethodIndex = -1
 		return
 	}
-	method, ok := reflect.PtrTo(rowStruct).MethodByName(d.PrecondMethod)
+	method, ok := reflect.PtrTo(rowStruct).MethodByName(d.Precond)
 	if !ok {
-		log.Panicf("Data.PrecondMethod: %s, no such method for the row struct.", d.PrecondMethod)
+		log.Panicf("Data.Precond: %s, no such method for the row struct.", d.Precond)
 	}
 	typ := method.Type
 	if typ.NumIn() != 1 || typ.NumOut() != 1 || typ.Out(0) != reflect.TypeOf(true) {
-		log.Panicf(`Data.PrecondMethod: %s, should be of "func () bool" form.`, d.PrecondMethod)
+		log.Panicf(`Data.Precond: %s, should be of "func () bool" form.`, d.Precond)
 	}
 	d.precondMethodIndex = method.Index
 }

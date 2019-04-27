@@ -1,4 +1,4 @@
-package pghandler
+package cache
 
 import (
 	"fmt"
@@ -10,15 +10,18 @@ import (
 )
 
 type Table struct {
-	// the name of the table to listen
+	// The name of the table to listen, required.
 	Name string
-	// the columns of a row to send to the handler
+	// The columns of the table to listen.
+	// If empty, the fields of rowStruct is used. The field name is converted to underscore style,
+	// and field with `json:"-"` tags is ignored.
 	Columns string
-	// the sql to load data when a notifier is inited or the db connection losted.
-	LoadSql string
-	// the columns to check when a row is updated, only if some of these columns has changed,
-	// the "Columns" of the row is send to the handler.
+	// when a row is updated, if none the "CheckColumns" has changed, the event is dropped.
+	// If empty, the fields of rowStruct is used. The field name is converted to underscore style,
+	// and field with `json:"-"` tags is ignored.
 	CheckColumns string
+	// The sql to load data when a handler is inited or the db connection losted.
+	LoadSql string
 }
 
 func (t *Table) init(rowStruct reflect.Type) {
