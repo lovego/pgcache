@@ -10,7 +10,7 @@
 `$ go get github.com/lovego/pglistener`
 
 ## Example (cache a table)
-```
+```go
 package pglistener_test
 
 import (
