@@ -1,4 +1,4 @@
-package pgnotify
+package pglistener
 
 import (
 	"context"

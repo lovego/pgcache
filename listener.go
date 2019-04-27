@@ -1,7 +1,7 @@
 /*
 适用于低频修改且量小的数据，单线程操作。
 */
-package pgnotify
+package pglistener
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/lovego/errs"
 )
 
-type Notifier struct {
+type Listener struct {
 	db       *sql.DB // db to create func and triggers
 	listener *pq.Listener
 	logger   Logger
@@ -48,7 +48,7 @@ type message struct {
 	New    json.RawMessage
 }
 
-func New(dbAddr string, logger Logger) (*Notifier, error) {
+func New(dbAddr string, logger Logger) (*Listener, error) {
 	db, err := getDb(dbAddr)
 	if err != nil {
 		return nil, err
@@ -56,97 +56,95 @@ func New(dbAddr string, logger Logger) (*Notifier, error) {
 	if err := createPGFunction(db); err != nil {
 		return nil, err
 	}
-	n := &Notifier{
+	l := &Listener{
 		db:       db,
 		logger:   logger,
 		handlers: make(map[string]Handler),
 		inited:   make(map[string]chan struct{}),
 	}
-	n.listener = pq.NewListener(dbAddr, time.Second, time.Minute, n.eventLogger)
-	go n.loop()
-	return n, nil
+	l.listener = pq.NewListener(dbAddr, time.Second, time.Minute, l.eventLogger)
+	go l.loop()
+	return l, nil
 }
 
-func (n *Notifier) Notify(handler TableHandler) error {
-	return n.Listen(handler.TableName(), handler.Columns(), handler.CheckColumns(), handler)
+func (l *Listener) ListenTable(handler TableHandler) error {
+	return l.Listen(handler.TableName(), handler.Columns(), handler.CheckColumns(), handler)
 }
 
 // Listen a table, and send "columns" to the handler when a row is created/updated/deleted.
 // When a row is Updated, only if some "checkColumns" has changed, the "columns" will be send to
 // the handler.
-func (n *Notifier) Listen(table string, columns, checkColumns string, handler Handler) error {
+func (l *Listener) Listen(table string, columns, checkColumns string, handler Handler) error {
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
-	if _, ok := n.handlers[table]; ok {
-		return fmt.Errorf("pgnotify: table '%s' is aready listened.", table)
+	if _, ok := l.handlers[table]; ok {
+		return fmt.Errorf("pglistener: table '%s' is aready listened.", table)
 	}
-	if err := createTrigger(n.db, table, columns, checkColumns); err != nil {
+	if err := createTrigger(l.db, table, columns, checkColumns); err != nil {
 		return err
 	}
-	n.handlers[table] = handler
-	n.inited[table] = make(chan struct{})
-	channel := "pgnotify_" + table
-	if err := n.listener.Listen(channel); err != nil {
+	l.handlers[table] = handler
+	l.inited[table] = make(chan struct{})
+	if err := l.listener.Listen(l.GetChannel(table)); err != nil {
 		return errs.Trace(err)
 	}
-	n.listener.Notify <- &pq.Notification{Channel: channel, Extra: "reload"}
-	<-n.inited[table]
+	l.listener.Notify <- &pq.Notification{Channel: l.GetChannel(table), Extra: "reload"}
+	<-l.inited[table]
 	return nil
 }
 
-func (n *Notifier) Unlisten(table string) error {
+func (l *Listener) Unlisten(table string) error {
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
-	channel := "pgnotify_" + table
-	if err := n.listener.Unlisten(channel); err != nil {
+	if err := l.listener.Unlisten(l.GetChannel(table)); err != nil {
 		return errs.Trace(err)
 	}
 	return nil
 }
 
-func (n *Notifier) UnlistenAll() error {
-	if err := n.listener.UnlistenAll(); err != nil {
+func (l *Listener) UnlistenAll() error {
+	if err := l.listener.UnlistenAll(); err != nil {
 		return errs.Trace(err)
 	}
 	return nil
 }
 
-func (n *Notifier) loop() {
+func (l *Listener) loop() {
 	for {
 		select {
-		case notice := <-n.listener.Notify:
-			n.handle(notice)
+		case notice := <-l.listener.Notify:
+			l.handle(notice)
 		case <-time.After(time.Minute):
-			go n.listener.Ping()
+			go l.listener.Ping()
 		}
 	}
 }
 
-func (n *Notifier) handle(notice *pq.Notification) {
+func (l *Listener) handle(notice *pq.Notification) {
 	if notice == nil { // connection loss
-		for table, handler := range n.handlers {
+		for table, handler := range l.handlers {
 			handler.ConnLoss(table)
 		}
 		return
 	}
 
-	var table = strings.TrimPrefix(notice.Channel, "pgnotify_")
-	handler := n.handlers[table]
+	var table = l.GetTable(notice.Channel)
+	handler := l.handlers[table]
 	if handler == nil {
-		n.logger.Errorf("unexpected notification: %+v", notice)
+		l.logger.Errorf("unexpected Notification: %+v", notice)
 	}
 	if notice.Extra == "reload" {
 		handler.ConnLoss(table)
-		n.inited[table] <- struct{}{}
-		close(n.inited[table])
+		l.inited[table] <- struct{}{}
+		close(l.inited[table])
 		return
 	}
 
 	var msg message
 	if err := json.Unmarshal([]byte(notice.Extra), &msg); err != nil {
-		n.logger.Error(err)
+		l.logger.Error(err)
 	}
 	switch msg.Action {
 	case "INSERT":
@@ -156,18 +154,26 @@ func (n *Notifier) handle(notice *pq.Notification) {
 	case "DELETE":
 		handler.Delete(table, msg.Old)
 	default:
-		n.logger.Errorf("unexpected msg: %+v", msg)
+		l.logger.Errorf("unexpected msg: %+v", msg)
 	}
 }
 
-func (n *Notifier) eventLogger(event pq.ListenerEventType, err error) {
+func (l *Listener) GetChannel(table string) string {
+	return "pgnotify_" + table
+}
+
+func (l *Listener) GetTable(channel string) string {
+	return strings.TrimPrefix(channel, "pgnotify_")
+}
+
+func (l *Listener) eventLogger(event pq.ListenerEventType, err error) {
 	if err != nil {
-		n.logger.Error(event, err)
+		l.logger.Error(event, err)
 	}
 }
 
-func (n *Notifier) DB() *sql.DB {
-	return n.db
+func (l *Listener) DB() *sql.DB {
+	return l.db
 }
 
 func getDb(dbAddr string) (*sql.DB, error) {
