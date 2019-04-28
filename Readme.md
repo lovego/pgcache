@@ -38,7 +38,7 @@ type Student struct {
     Class string
 }
 
-func getTableHandler(studentsMap, classesMap interface{}) pglistener.TableHandler {
+func getCacheHandler(studentsMap, classesMap interface{}) *cache.Handler {
     var mutex sync.RWMutex
 
     return cache.New(cache.Table{Name: "students"}, Student{}, []cache.Data{
@@ -61,7 +61,7 @@ func ExampleListener() {
     if err != nil {
         panic(err)
     }
-    if err := listener.ListenTable(getTableHandler(&studentsMap, &classesMap)); err != nil {
+    if err := listener.ListenTable(getCacheHandler(&studentsMap, &classesMap)); err != nil {
         panic(err)
     }
 

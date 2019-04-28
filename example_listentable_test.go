@@ -16,6 +16,17 @@ type StudentRow struct {
 	Name, Time string
 }
 
+func getStudentsCacheHandler(mapPtr interface{}) *cache.Handler {
+	var mutex sync.RWMutex
+	return cache.New(cache.Table{
+		Name:         "students",
+		Columns:      "$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
+		CheckColumns: "$1.id, $1.name",
+	}, StudentRow{}, []cache.Data{
+		{RWMutex: &mutex, MapPtr: mapPtr, MapKeys: []string{"Id"}},
+	}, bsql.New(testDB, time.Second), logger)
+}
+
 func ExampleListener_ListenTable() {
 	createStudentsTable()
 
@@ -26,7 +37,7 @@ func ExampleListener_ListenTable() {
 		fmt.Println(errs.WithStack(err))
 		return
 	}
-	if err := listener.ListenTable(getHandler(&students)); err != nil {
+	if err := listener.ListenTable(getStudentsCacheHandler(&students)); err != nil {
 		fmt.Println(errs.WithStack(err))
 		return
 	}
@@ -71,15 +82,4 @@ func ExampleListener_ListenTable() {
 	// map[1:{1 韩梅梅 2018-09-09}]
 	// map[1:{1 韩梅梅 2018-09-09}]
 	// map[]
-}
-
-func getHandler(mapPtr interface{}) pglistener.TableHandler {
-	var mutex sync.RWMutex
-	return cache.New(cache.Table{
-		Name:         "students",
-		Columns:      "$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
-		CheckColumns: "$1.id, $1.name",
-	}, StudentRow{}, []cache.Data{
-		{RWMutex: &mutex, MapPtr: mapPtr, MapKeys: []string{"Id"}},
-	}, bsql.New(testDB, time.Second), logger)
 }

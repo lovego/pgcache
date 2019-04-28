@@ -25,6 +25,19 @@ type Student struct {
 	Class string
 }
 
+func getCacheHandler(studentsMap, classesMap interface{}) *cache.Handler {
+	var mutex sync.RWMutex
+
+	return cache.New(cache.Table{Name: "students"}, Student{}, []cache.Data{
+		{
+			RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
+		}, {
+			RWMutex: &mutex, MapPtr: classesMap, MapKeys: []string{"Class"},
+			SortedSetUniqueKey: []string{"Id"},
+		},
+	}, bsql.New(testDB, time.Second), logger)
+}
+
 func ExampleListener() {
 	initStudentsTable()
 
@@ -35,7 +48,7 @@ func ExampleListener() {
 	if err != nil {
 		panic(err)
 	}
-	if err := listener.ListenTable(getTableHandler(&studentsMap, &classesMap)); err != nil {
+	if err := listener.ListenTable(getCacheHandler(&studentsMap, &classesMap)); err != nil {
 		panic(err)
 	}
 
@@ -106,19 +119,6 @@ VALUES
 `); err != nil {
 		panic(err)
 	}
-}
-
-func getTableHandler(studentsMap, classesMap interface{}) pglistener.TableHandler {
-	var mutex sync.RWMutex
-
-	return cache.New(cache.Table{Name: "students"}, Student{}, []cache.Data{
-		{
-			RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
-		}, {
-			RWMutex: &mutex, MapPtr: classesMap, MapKeys: []string{"Class"},
-			SortedSetUniqueKey: []string{"Id"},
-		},
-	}, bsql.New(testDB, time.Second), logger)
 }
 
 func getTestDataSource() string {
