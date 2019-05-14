@@ -187,8 +187,7 @@ func getDb(dbAddr string) (*sql.DB, error) {
 		return nil, errs.Trace(err)
 	}
 	db.SetConnMaxLifetime(time.Minute)
-	// don't keep idle connections. only used to create func and triggers.
-	db.SetMaxIdleConns(0)
+	db.SetMaxIdleConns(1)
 	db.SetMaxOpenConns(1)
 
 	return db, nil
