@@ -125,7 +125,7 @@ func (d *Data) preprocess(row reflect.Value) {
 	if d.preprocessMethodIndex < 0 {
 		return
 	}
-	row.Addr().Method(d.precondMethodIndex).Call(nil)
+	row.Addr().Method(d.preprocessMethodIndex).Call(nil)
 }
 
 func (d *Data) precond(row reflect.Value) bool {
