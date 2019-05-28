@@ -29,10 +29,10 @@ func (t *Table) init(rowStruct reflect.Type) {
 		log.Panic("both Name and LoadSql are empty.")
 	}
 	if t.Columns == "" {
-		t.Columns = columnsFromStruct(rowStruct)
+		t.Columns = ColumnsFromStruct(rowStruct)
 	}
 	if t.CheckColumns == "" {
-		t.CheckColumns = columnsFromStruct(rowStruct)
+		t.CheckColumns = ColumnsFromStruct(rowStruct)
 	}
 	if t.LoadSql == "" {
 		t.LoadSql = fmt.Sprintf(
@@ -41,7 +41,7 @@ func (t *Table) init(rowStruct reflect.Type) {
 	}
 }
 
-func columnsFromStruct(rowStruct reflect.Type) string {
+func ColumnsFromStruct(rowStruct reflect.Type) string {
 	var result []string
 	traverseStructFields(rowStruct, func(field reflect.StructField) {
 		result = append(result, Field2Column(field.Name))
