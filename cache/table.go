@@ -21,6 +21,8 @@ type Table struct {
 	// and field with `json:"-"` tags is ignored.
 	CheckColumns string
 	// The sql to load data when a handler is inited or the db connection losted.
+	// If empty, the fields of rowStruct is used to make a SELECT sql FROM "NAME".
+	// The field name is converted to underscore style, and field with `json:"-"` tags is ignored.
 	LoadSql string
 }
 
@@ -36,7 +38,7 @@ func (t *Table) init(rowStruct reflect.Type) {
 	}
 	if t.LoadSql == "" {
 		t.LoadSql = fmt.Sprintf(
-			"select %s from %s", strings.Replace(t.Columns, "$1.", "", -1), t.Name,
+			"SELECT %s FROM %s", ColumnsFromStruct(rowStruct), t.Name,
 		)
 	}
 }

@@ -11,10 +11,10 @@ func ExampleTable_init() {
 		Score
 		Z bool `json:"-"`
 	}{}))
-	fmt.Printf("%s\n%s\n%s\n%s\n", t.Name, t.Columns, t.LoadSql, t.CheckColumns)
+	fmt.Printf("%s\n%s\n%s\n%s\n", t.Name, t.Columns, t.CheckColumns, t.LoadSql)
 	// Output:
 	// scores
 	// student_id,subject,score
-	// select student_id,subject,score from scores
 	// student_id,subject,score
+	// SELECT student_id,subject,score FROM scores
 }
