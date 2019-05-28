@@ -29,19 +29,19 @@ func (t *Table) init(rowStruct reflect.Type) {
 		log.Panic("both Name and LoadSql are empty.")
 	}
 	if t.Columns == "" {
-		t.Columns = FieldsFromStruct(rowStruct)
+		t.Columns = columnsFromStruct(rowStruct)
+	}
+	if t.CheckColumns == "" {
+		t.CheckColumns = columnsFromStruct(rowStruct)
 	}
 	if t.LoadSql == "" {
 		t.LoadSql = fmt.Sprintf(
 			"select %s from %s", strings.Replace(t.Columns, "$1.", "", -1), t.Name,
 		)
 	}
-	if t.CheckColumns == "" {
-		t.CheckColumns = t.Columns
-	}
 }
 
-func FieldsFromStruct(rowStruct reflect.Type) string {
+func columnsFromStruct(rowStruct reflect.Type) string {
 	var result []string
 	traverseStructFields(rowStruct, func(field reflect.StructField) {
 		result = append(result, Field2Column(field.Name))
