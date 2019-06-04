@@ -220,3 +220,15 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	// map[1001:map[语文:[98 99]] 1002:map[] 1003:map[数学:[100] 语文:[99]]]
 	// map[]
 }
+
+func ExampleReplaceBrackets() {
+	var m map[string]map[int64]*uint16
+	src := reflect.TypeOf(m).String()
+	fmt.Println(replaceBrackets(src, []string{`Type`}))
+	fmt.Println(replaceBrackets(src, []string{`Type`, `Id`}))
+	fmt.Println(replaceBrackets(src, []string{`Type`, `Id`, `XXX`}))
+	// Output:
+	// map[Type]map[int64]*uint16
+	// map[Type]map[Id]*uint16
+	// map[Type]map[Id]*uint16
+}

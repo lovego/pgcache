@@ -8,15 +8,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/lovego/errs"
+	"github.com/lovego/pglistener/cache/manage"
 )
 
 type Listener struct {
 	db       *sql.DB // db to create func and triggers
+	dbName   string
 	listener *pq.Listener
 	logger   Logger
 	handlers map[string]Handler
@@ -49,6 +52,13 @@ type message struct {
 }
 
 func New(dbAddr string, logger Logger) (*Listener, error) {
+	var dbName string
+	if u, err := url.Parse(dbAddr); err != nil {
+		return nil, err
+	} else {
+		dbName = strings.TrimPrefix(u.Path, "/")
+	}
+
 	db, err := getDb(dbAddr)
 	if err != nil {
 		return nil, err
@@ -58,6 +68,7 @@ func New(dbAddr string, logger Logger) (*Listener, error) {
 	}
 	l := &Listener{
 		db:       db,
+		dbName:   dbName,
 		logger:   logger,
 		handlers: make(map[string]Handler),
 		inited:   make(map[string]chan struct{}),
@@ -75,6 +86,8 @@ func (l *Listener) ListenTable(handler TableHandler) error {
 // When a row is Updated, only if some "checkColumns" has changed, the "columns" will be send to
 // the handler.
 func (l *Listener) Listen(table string, columns, checkColumns string, handler Handler) error {
+	manage.TryRegister(l.dbName, table, handler)
+
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
@@ -95,6 +108,8 @@ func (l *Listener) Listen(table string, columns, checkColumns string, handler Ha
 }
 
 func (l *Listener) Unlisten(table string) error {
+	manage.Unregister(l.dbName, table)
+
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
@@ -105,6 +120,8 @@ func (l *Listener) Unlisten(table string) error {
 }
 
 func (l *Listener) UnlistenAll() error {
+	manage.UnregisterDB(l.dbName)
+
 	if err := l.listener.UnlistenAll(); err != nil {
 		return errs.Trace(err)
 	}

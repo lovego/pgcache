@@ -1,7 +1,9 @@
 package cache
 
 import (
+	"fmt"
 	"reflect"
+	"regexp"
 	"sync"
 
 	"github.com/lovego/sorted_sets"
@@ -27,6 +29,11 @@ type Data struct {
 	// Precond is optional. It's a method name of row struct. It should be of "func () bool" form.
 	// It is called before handling, if the return value is false, no handling(save or remove) is performed.
 	Precond string
+
+	// Id is not required, only for cache manage
+	ManageKey string
+	// Desc is not required, only for cache manage
+	ManageDesc string
 
 	// the map value to store data
 	mapV reflect.Value
@@ -134,4 +141,35 @@ func (d *Data) precond(row reflect.Value) bool {
 	}
 	out := row.Addr().Method(d.precondMethodIndex).Call(nil)
 	return out[0].Bool()
+}
+
+func (d *Data) Key() string {
+	if d.ManageKey == `` {
+		d.ManageKey = replaceBrackets(d.mapV.Type().String(), d.MapKeys)
+	}
+	return d.ManageKey
+}
+
+func (d *Data) Desc() string {
+	if d.ManageDesc == `` {
+		d.ManageDesc = fmt.Sprintf("%s, size: %d", d.mapV.Type().String(), d.mapV.Len())
+	}
+	return d.ManageDesc
+}
+
+func (d *Data) Data() interface{} {
+	return d.MapPtr
+}
+
+func replaceBrackets(src string, replacements []string) string {
+	i := 0
+	return regexp.MustCompile(`\[\w+\]`).ReplaceAllStringFunc(src, func(submatch string) string {
+		if i < len(replacements) {
+			result := replacements[i]
+			i++
+			return "[" + result + "]"
+		} else {
+			return submatch
+		}
+	})
 }

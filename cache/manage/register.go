@@ -1,6 +1,8 @@
 package manage
 
-import "log"
+import (
+	"log"
+)
 
 type Cache interface {
 	Datas() []Data
@@ -29,4 +31,16 @@ func TryRegister(database, table string, ifc interface{}) {
 		log.Panicf("%s.%s aready exists", database, table)
 	}
 	tablesMap[table] = cache
+}
+
+func Unregister(database, table string) {
+	tablesMap := cachesMap[database]
+	if tablesMap == nil {
+		return
+	}
+	delete(tablesMap, table)
+}
+
+func UnregisterDB(database string) {
+	delete(cachesMap, database)
 }

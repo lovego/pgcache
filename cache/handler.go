@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"reflect"
+
+	"github.com/lovego/pglistener/cache/manage"
 )
 
 // A Handler to cache table data.
@@ -142,4 +144,12 @@ func (h *Handler) Columns() string {
 
 func (h *Handler) CheckColumns() string {
 	return h.table.CheckColumns
+}
+
+func (h *Handler) Datas() []manage.Data {
+	result := make([]manage.Data, len(h.datas))
+	for i, data := range h.datas {
+		result[i] = data
+	}
+	return result
 }

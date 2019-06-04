@@ -89,6 +89,8 @@ VALUES
 	maps.Println(studentsMap)
 	maps.Println(classesMap)
 
+	listener.UnlistenAll()
+
 	// Output:
 	// init:
 	// map[1:{1 李雷 初三1班} 2:{2 韩梅梅 初三1班}]

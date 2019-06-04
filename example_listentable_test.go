@@ -75,6 +75,7 @@ func ExampleListener_ListenTable() {
 
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(students)
+	listener.UnlistenAll()
 
 	// Output:
 	// map[]
