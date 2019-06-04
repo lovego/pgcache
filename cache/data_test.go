@@ -221,14 +221,16 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	// map[]
 }
 
-func ExampleReplaceBrackets() {
+func ExampleAddKeyValueNames() {
 	var m map[string]map[int64]*uint16
 	src := reflect.TypeOf(m).String()
-	fmt.Println(replaceBrackets(src, []string{`Type`}))
-	fmt.Println(replaceBrackets(src, []string{`Type`, `Id`}))
-	fmt.Println(replaceBrackets(src, []string{`Type`, `Id`, `XXX`}))
+	fmt.Println(addKeyValueNames(src, nil, ``))
+	fmt.Println(addKeyValueNames(src, []string{`Type`}, ``))
+	fmt.Println(addKeyValueNames(src, []string{`Type`, `Id`}, ``))
+	fmt.Println(addKeyValueNames(src, []string{`Type`, `Id`, `XXX`}, `Flags`))
 	// Output:
-	// map[Type]map[int64]*uint16
-	// map[Type]map[Id]*uint16
-	// map[Type]map[Id]*uint16
+	// map[string]map[int64]*uint16
+	// map[Type:string]map[int64]*uint16
+	// map[Type:string]map[Id:int64]*uint16
+	// map[Type:string]map[Id:int64]Flags:*uint16
 }

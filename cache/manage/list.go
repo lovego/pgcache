@@ -16,7 +16,7 @@ func List() []byte {
 	buf := bytes.NewBufferString(`
 <table style="width: 100%; border-collapse: collapse;">
 <style>td {padding: 5px 10px; border: 1px dashed gray; }</style>
-<tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Type</th> <th>Size</th> <th>Operation</th> </tr>
+<tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Size</th> <th>Operation</th> </tr>
 
 `)
 
@@ -83,8 +83,8 @@ func listData(db, table string, data Data) string {
 		return `<td></td> <td></td>`
 	}
 	return fmt.Sprintf(
-		`<td><a href="/caches/%s/%s/%s">%s</a></td> <td>%s</td> <td>%d</td>`,
-		db, table, data.Key(), data.Key(), data.Type(), data.Size(),
+		`<td><a href="/caches/%s/%s/%s">%s</a></td> <td>%d</td>`,
+		db, table, data.Key(), data.Key(), data.Size(),
 	)
 }
 

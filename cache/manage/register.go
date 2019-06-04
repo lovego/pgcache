@@ -10,7 +10,6 @@ type Cache interface {
 
 type Data interface {
 	Key() string
-	Type() string
 	Size() int
 	Data() interface{}
 }

@@ -3,6 +3,7 @@ package cache
 import (
 	"reflect"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/lovego/sorted_sets"
@@ -143,16 +144,9 @@ func (d *Data) precond(row reflect.Value) bool {
 
 func (d *Data) Key() string {
 	if d.manageKey == `` {
-		d.manageKey = replaceBrackets(d.mapV.Type().String(), d.MapKeys)
+		d.manageKey = addKeyValueNames(d.mapV.Type().String(), d.MapKeys, d.MapValue)
 	}
 	return d.manageKey
-}
-
-func (d *Data) Type() string {
-	if d.manageType == `` {
-		d.manageType = d.mapV.Type().String()
-	}
-	return d.manageType
 }
 
 func (d *Data) Size() int {
@@ -163,15 +157,20 @@ func (d *Data) Data() interface{} {
 	return d.MapPtr
 }
 
-func replaceBrackets(src string, replacements []string) string {
+func addKeyValueNames(mapType string, keyNames []string, valueName string) string {
 	i := 0
-	return regexp.MustCompile(`\[\w+\]`).ReplaceAllStringFunc(src, func(submatch string) string {
-		if i < len(replacements) {
-			result := replacements[i]
-			i++
-			return "[" + result + "]"
-		} else {
+	mapType = regexp.MustCompile(`\[\w+\]`).ReplaceAllStringFunc(mapType, func(submatch string) string {
+		if i >= len(keyNames) {
 			return submatch
 		}
+		name := keyNames[i]
+		i++
+		return submatch[:1] + name + ":" + submatch[1:]
 	})
+	if valueName != `` {
+		if index := strings.LastIndexByte(mapType, ']'); index > 0 {
+			return mapType[:index+1] + valueName + ":" + mapType[index+1:]
+		}
+	}
+	return mapType
 }
