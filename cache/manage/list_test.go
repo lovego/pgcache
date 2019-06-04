@@ -9,8 +9,9 @@ type testCache2 struct {
 	testCache1
 }
 type testData struct {
-	key, desc string
-	data      interface{}
+	key, typ string
+	size     int
+	data     interface{}
 }
 
 func (t testCache1) Datas() []Data {
@@ -23,8 +24,11 @@ func (t testCache2) Reload() error {
 func (t testData) Key() string {
 	return t.key
 }
-func (t testData) Desc() string {
-	return t.desc
+func (t testData) Type() string {
+	return t.typ
+}
+func (t testData) Size() int {
+	return t.size
 }
 func (t testData) Data() interface{} {
 	return t.data
@@ -35,16 +39,16 @@ func ExampleList() {
 	var table2, table3 testCache2
 
 	table1.datas = []Data{
-		testData{`key1.1`, `desc1.1`, nil},
-		testData{`key1.2`, `desc1.2`, nil},
+		testData{`key1.1`, `type1.1`, 1, nil},
+		testData{`key1.2`, `type1.2`, 5, nil},
 	}
 	table2.datas = []Data{
-		testData{`key2.1`, `desc2.1`, nil},
-		testData{`key2.2`, `desc2.2`, nil},
-		testData{`key2.3`, `desc2.3`, nil},
+		testData{`key2.1`, `type2.1`, 4, nil},
+		testData{`key2.2`, `type2.2`, 9, nil},
+		testData{`key2.3`, `type2.3`, 0, nil},
 	}
 	table3.datas = []Data{
-		testData{`key3.1`, `desc3.1`, nil},
+		testData{`key3.1`, `type3.1`, 3, nil},
 	}
 
 	TryRegister(`db1`, `table1`, table1)
@@ -52,26 +56,27 @@ func ExampleList() {
 	TryRegister(`db2`, `table3`, table3)
 	fmt.Println(string(List()))
 	// Output:
-	// <table style="width: 70%; margin: 5% 10%; border-collapse: collapse;">
+	// <table style="width: 100%; border-collapse: collapse;">
 	// <style>td {padding: 5px 10px; border: 1px dashed gray; }</style>
-	// <tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Operations</th> </tr>
+	// <tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Type</th> <th>Size</th> <th>Operation</th> </tr>
 	//
 	// <tr> <td rowspan="2">db1</td> <td rowspan="2">table1</td>
-	// <td><a href="/caches/db1/table1/key1.1">key1.1(desc1.1)</a></td>
+	// <td><a href="/caches/db1/table1/key1.1">key1.1</a></td> <td>type1.1</td> <td>1</td>
 	// <td rowspan="2"></td>
 	// </tr>
-	// <tr> <td><a href="/caches/db1/table1/key1.2">key1.2(desc1.2)</a></td> </tr>
+	// <tr> <td><a href="/caches/db1/table1/key1.2">key1.2</a></td> <td>type1.2</td> <td>5</td> </tr>
 	//
 	// <tr> <td rowspan="4">db2</td> <td rowspan="3">table2</td>
-	// <td><a href="/caches/db2/table2/key2.1">key2.1(desc2.1)</a></td>
+	// <td><a href="/caches/db2/table2/key2.1">key2.1</a></td> <td>type2.1</td> <td>4</td>
 	// <td rowspan="3"><a href="/caches/db2/table2/reload">reload</a></td>
 	// </tr>
-	// <tr> <td><a href="/caches/db2/table2/key2.2">key2.2(desc2.2)</a></td> </tr>
-	// <tr> <td><a href="/caches/db2/table2/key2.3">key2.3(desc2.3)</a></td> </tr>
+	// <tr> <td><a href="/caches/db2/table2/key2.2">key2.2</a></td> <td>type2.2</td> <td>9</td> </tr>
+	// <tr> <td><a href="/caches/db2/table2/key2.3">key2.3</a></td> <td>type2.3</td> <td>0</td> </tr>
 	// <tr> <td>table3</td>
-	// <td><a href="/caches/db2/table3/key3.1">key3.1(desc3.1)</a></td>
+	// <td><a href="/caches/db2/table3/key3.1">key3.1</a></td> <td>type3.1</td> <td>3</td>
 	// <td><a href="/caches/db2/table3/reload">reload</a></td>
 	// </tr>
 	//
 	// </table>
+
 }

@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"sync"
@@ -30,10 +29,9 @@ type Data struct {
 	// It is called before handling, if the return value is false, no handling(save or remove) is performed.
 	Precond string
 
-	// Id is not required, only for cache manage
-	ManageKey string
-	// Desc is not required, only for cache manage
-	ManageDesc string
+	// for cache manage
+	manageKey  string
+	manageType string
 
 	// the map value to store data
 	mapV reflect.Value
@@ -144,17 +142,21 @@ func (d *Data) precond(row reflect.Value) bool {
 }
 
 func (d *Data) Key() string {
-	if d.ManageKey == `` {
-		d.ManageKey = replaceBrackets(d.mapV.Type().String(), d.MapKeys)
+	if d.manageKey == `` {
+		d.manageKey = replaceBrackets(d.mapV.Type().String(), d.MapKeys)
 	}
-	return d.ManageKey
+	return d.manageKey
 }
 
-func (d *Data) Desc() string {
-	if d.ManageDesc == `` {
-		d.ManageDesc = fmt.Sprintf("%s, size: %d", d.mapV.Type().String(), d.mapV.Len())
+func (d *Data) Type() string {
+	if d.manageType == `` {
+		d.manageType = d.mapV.Type().String()
 	}
-	return d.ManageDesc
+	return d.manageType
+}
+
+func (d *Data) Size() int {
+	return d.mapV.Len()
 }
 
 func (d *Data) Data() interface{} {

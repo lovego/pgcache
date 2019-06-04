@@ -14,9 +14,9 @@ func List() []byte {
 	sort.Strings(dbs)
 
 	buf := bytes.NewBufferString(`
-<table style="width: 70%; margin: 5% 10%; border-collapse: collapse;">
+<table style="width: 100%; border-collapse: collapse;">
 <style>td {padding: 5px 10px; border: 1px dashed gray; }</style>
-<tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Operations</th> </tr>
+<tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Type</th> <th>Size</th> <th>Operation</th> </tr>
 
 `)
 
@@ -80,11 +80,11 @@ func listDbTable(buf *bytes.Buffer, db, table string, cache Cache) int {
 
 func listData(db, table string, data Data) string {
 	if data == nil {
-		return `<td></td>`
+		return `<td></td> <td></td>`
 	}
 	return fmt.Sprintf(
-		`<td><a href="/caches/%s/%s/%s">%s(%s)</a></td>`,
-		db, table, data.Key(), data.Key(), data.Desc(),
+		`<td><a href="/caches/%s/%s/%s">%s</a></td> <td>%s</td> <td>%d</td>`,
+		db, table, data.Key(), data.Key(), data.Type(), data.Size(),
 	)
 }
 
