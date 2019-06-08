@@ -1,12 +1,20 @@
 package pglistener_test
 
 import (
+	"database/sql"
 	"fmt"
+	"os"
+	"runtime"
 	"time"
 
 	"github.com/lovego/errs"
-	"github.com/lovego/pglistener"
+	loggerPkg "github.com/lovego/logger"
+	"github.com/lovego/pgcache/pglistener"
 )
+
+var dbUrl = getTestDataSource()
+var testDB = connectDB(dbUrl)
+var logger = loggerPkg.New(os.Stderr)
 
 type testHandler struct {
 }
@@ -53,7 +61,7 @@ func ExampleListener_Listen() {
 func testCreateUpdateDelete(table string) {
 	createStudentsTable()
 
-	listener, err := pglistener.New(dbUrl, logger)
+	listener, err := pglistener.New(dbUrl, nil, logger)
 	if err != nil {
 		fmt.Println(errs.WithStack(err))
 		return
@@ -105,4 +113,22 @@ func createStudentsTable() {
 	)`); err != nil {
 		panic(err)
 	}
+}
+
+func getTestDataSource() string {
+	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
+		return env
+	} else if runtime.GOOS == "darwin" {
+		return "postgres://postgres:@localhost/test?sslmode=disable"
+	} else {
+		return "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
+	}
+}
+
+func connectDB(dbUrl string) *sql.DB {
+	db, err := sql.Open(`postgres`, dbUrl)
+	if err != nil {
+		panic(err)
+	}
+	return db
 }

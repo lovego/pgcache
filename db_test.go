@@ -1,4 +1,4 @@
-package pglistener_test
+package pgcache_test
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ import (
 	"github.com/lovego/bsql"
 	loggerPkg "github.com/lovego/logger"
 	"github.com/lovego/maps"
-	"github.com/lovego/pglistener"
+	"github.com/lovego/pgcache"
 	"github.com/lovego/pglistener/cache"
 )
 
@@ -25,30 +25,29 @@ type Student struct {
 	Class string
 }
 
-func getCacheHandler(studentsMap, classesMap interface{}) *cache.Handler {
-	var mutex sync.RWMutex
-
-	return cache.New(cache.Table{Name: "students"}, Student{}, []cache.Data{
-		{
-			RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
-		}, {
-			RWMutex: &mutex, MapPtr: classesMap, MapKeys: []string{"Class"},
-			SortedSetUniqueKey: []string{"Id"},
-		},
-	}, bsql.New(testDB, time.Second), logger)
-}
-
 func ExampleListener() {
 	initStudentsTable()
 
 	var studentsMap = make(map[int64]Student)
 	var classesMap = make(map[string][]Student)
+	var mutex sync.RWMutex
 
-	listener, err := pglistener.New(dbUrl, logger)
+	dbCache, err := pgcache.New(dbUrl, bsql.New(testDB, time.Second), logger)
 	if err != nil {
 		panic(err)
 	}
-	if err := listener.ListenTable(getCacheHandler(&studentsMap, &classesMap)); err != nil {
+	if tableCache, err := dbCache.Add(&Table{
+		Name:      "students",
+		RowStruct: Student{},
+		Datas: []cache.Data{
+			{
+				RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
+			}, {
+				RWMutex: &mutex, MapPtr: classesMap, MapKeys: []string{"Class"},
+				SortedSetUniqueKey: []string{"Id"},
+			},
+		},
+	}); err != nil {
 		panic(err)
 	}
 
@@ -58,38 +57,13 @@ func ExampleListener() {
 	maps.Println(classesMap)
 
 	// even you insert some rows.
-	if _, err := testDB.Exec(`
-INSERT INTO students (id, name, class)
-VALUES
-(3, 'Lily',   '初三2班'),
-(4, 'Lucy',   '初三2班');
-`); err != nil {
-		panic(err)
-	}
-	time.Sleep(10 * time.Millisecond)
-	fmt.Println(`after INSERT:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
-
+	testInsert(studentsMap, classesMap)
 	// even you update some rows.
-	if _, err := testDB.Exec(`UPDATE students SET class = '初三2班'`); err != nil {
-		panic(err)
-	}
-	time.Sleep(10 * time.Millisecond)
-	fmt.Println(`after UPDATE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
-
+	testUpdate(studentsMap, classesMap)
 	// even you delete some rows.
-	if _, err := testDB.Exec(`DELETE FROM students WHERE id in (3, 4)`); err != nil {
-		panic(err)
-	}
-	time.Sleep(10 * time.Millisecond)
-	fmt.Println(`after DELETE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	testDelete(studentsMap, classesMap)
 
-	listener.UnlistenAll()
+	dbCache.UnlistenAll()
 
 	// Output:
 	// init:
@@ -121,6 +95,41 @@ VALUES
 `); err != nil {
 		panic(err)
 	}
+}
+
+func testInsert(studentsMap map[int64]Student, classesMap map[string][]Student) {
+	if _, err := testDB.Exec(`
+INSERT INTO students (id, name, class)
+VALUES
+(3, 'Lily',   '初三2班'),
+(4, 'Lucy',   '初三2班');
+`); err != nil {
+		panic(err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	fmt.Println(`after INSERT:`)
+	maps.Println(studentsMap)
+	maps.Println(classesMap)
+}
+
+func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) {
+	if _, err := testDB.Exec(`UPDATE students SET class = '初三2班'`); err != nil {
+		panic(err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	fmt.Println(`after UPDATE:`)
+	maps.Println(studentsMap)
+	maps.Println(classesMap)
+}
+
+func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) {
+	if _, err := testDB.Exec(`DELETE FROM students WHERE id in (3, 4)`); err != nil {
+		panic(err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	fmt.Println(`after DELETE:`)
+	maps.Println(studentsMap)
+	maps.Println(classesMap)
 }
 
 func getTestDataSource() string {

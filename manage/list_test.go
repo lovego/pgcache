@@ -14,7 +14,7 @@ type testData struct {
 	data interface{}
 }
 
-func (t testCache1) Datas() []Data {
+func (t testCache1) GetDatas() []Data {
 	return t.datas
 }
 func (t testCache2) Reload() error {
@@ -48,9 +48,15 @@ func ExampleList() {
 		testData{`key3.1`, 3, nil},
 	}
 
-	TryRegister(`db1`, `table1`, table1)
-	TryRegister(`db2`, `table2`, table2)
-	TryRegister(`db2`, `table3`, table3)
+	if err := Register(`db1`, `table1`, table1); err != nil {
+		panic(err)
+	}
+	if err := Register(`db2`, `table2`, table2); err != nil {
+		panic(err)
+	}
+	if err := Register(`db2`, `table3`, table3); err != nil {
+		panic(err)
+	}
 	fmt.Println(string(List()))
 	// Output:
 	// <table style="width: 100%; border-collapse: collapse;">

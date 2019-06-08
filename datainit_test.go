@@ -1,4 +1,4 @@
-package cache
+package pgcache
 
 import (
 	"fmt"
@@ -188,17 +188,17 @@ func ExampleData_init_invalidSortedSetUniqueKey_5() {
 		fmt.Println(recover())
 	}()
 	mutex := sync.RWMutex{}
-	type Score2 struct {
+	type score2 struct {
 		Score
 		ScoreFloat float32
 	}
-	var m map[int][]Score2
+	var m map[int][]score2
 	d := Data{
 		RWMutex: &mutex,
 		MapPtr:  &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{"ScoreFloat"},
 	}
-	d.init(reflect.TypeOf(Score2{}))
+	d.init(reflect.TypeOf(score2{}))
 	// Output:
 	// Data.SortedSetUniqueKey[0]: ScoreFloat, should be a integer or string type.
 }

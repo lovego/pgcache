@@ -1,46 +1,46 @@
-package cache
+package pgcache
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 
 	"github.com/lovego/struct_tag"
 )
 
-type Table struct {
-	// The name of the table to listen, required.
-	Name string
-	// The columns of the table to listen.
-	// If empty, the fields of rowStruct is used. The field name is converted to underscore style,
-	// and field with `json:"-"` tags is ignored.
-	Columns string
-	// when a row is updated, if none the "CheckColumns" has changed, the event is dropped.
-	// If empty, the fields of rowStruct is used. The field name is converted to underscore style,
-	// and field with `json:"-"` tags is ignored.
-	CheckColumns string
-	// The sql to load data when a handler is inited or the db connection losted.
-	// If empty, the fields of rowStruct is used to make a SELECT sql FROM "NAME".
-	// The field name is converted to underscore style, and field with `json:"-"` tags is ignored.
-	LoadSql string
-}
+func (t *Table) init() error {
+	if t.Name == "" {
+		return errors.New("Name should not be empty.")
+	}
 
-func (t *Table) init(rowStruct reflect.Type) {
-	if t.Name == "" && t.LoadSql == "" {
-		log.Panic("both Name and LoadSql are empty.")
+	t.rowStruct = reflect.TypeOf(t.RowStruct)
+	if t.rowStruct.Kind() != reflect.Struct {
+		return errors.New("RowStruct is not a struct")
 	}
+
 	if t.Columns == "" {
-		t.Columns = ColumnsFromStruct(rowStruct)
+		t.Columns = ColumnsFromStruct(t.rowStruct)
 	}
-	if t.CheckColumns == "" {
-		t.CheckColumns = ColumnsFromStruct(rowStruct)
-	}
+
 	if t.LoadSql == "" {
-		t.LoadSql = fmt.Sprintf(
-			"SELECT %s FROM %s", ColumnsFromStruct(rowStruct), t.Name,
-		)
+		bigColumns := t.BigColumns
+		if bigColumns != "" {
+			bigColumns = ", " + bigColumns
+		}
+		t.LoadSql = fmt.Sprintf("SELECT %s %s FROM %s", t.Columns, t.BigColumns, t.Name)
 	}
+
+	if len(t.Datas) == 0 {
+		return errors.New("Datas should not be empty")
+	}
+	for i := range t.Datas {
+		if err := t.Datas[i].init(t.rowStruct); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func ColumnsFromStruct(rowStruct reflect.Type) string {

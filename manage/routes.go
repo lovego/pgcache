@@ -55,7 +55,7 @@ func getData(database, table, key string) Data {
 	if cache == nil {
 		return nil
 	}
-	for _, data := range cache.Datas() {
+	for _, data := range cache.GetDatas() {
 		if data.Key() == key {
 			return data
 		}

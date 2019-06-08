@@ -8,18 +8,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/lovego/errs"
-	"github.com/lovego/pglistener/cache/manage"
 )
 
 type Listener struct {
 	db       *sql.DB // db to create func and triggers
-	dbName   string
 	listener *pq.Listener
 	logger   Logger
 	handlers map[string]Handler
@@ -33,13 +30,6 @@ type Handler interface {
 	ConnLoss(table string)
 }
 
-type TableHandler interface {
-	Handler
-	TableName() string
-	Columns() string
-	CheckColumns() string
-}
-
 type Logger interface {
 	Error(args ...interface{})
 	Errorf(format string, args ...interface{})
@@ -51,24 +41,18 @@ type message struct {
 	New    json.RawMessage
 }
 
-func New(dbAddr string, logger Logger) (*Listener, error) {
-	var dbName string
-	if u, err := url.Parse(dbAddr); err != nil {
-		return nil, err
-	} else {
-		dbName = strings.TrimPrefix(u.Path, "/")
-	}
-
-	db, err := getDb(dbAddr)
-	if err != nil {
-		return nil, err
+func New(dbAddr string, db *sql.DB, logger Logger) (*Listener, error) {
+	if db == nil {
+		var err error
+		if db, err = getDb(dbAddr); err != nil {
+			return nil, err
+		}
 	}
 	if err := createPGFunction(db); err != nil {
 		return nil, err
 	}
 	l := &Listener{
 		db:       db,
-		dbName:   dbName,
 		logger:   logger,
 		handlers: make(map[string]Handler),
 		inited:   make(map[string]chan struct{}),
@@ -78,16 +62,9 @@ func New(dbAddr string, logger Logger) (*Listener, error) {
 	return l, nil
 }
 
-func (l *Listener) ListenTable(handler TableHandler) error {
-	return l.Listen(handler.TableName(), handler.Columns(), handler.CheckColumns(), handler)
-}
-
-// Listen a table, and send "columns" to the handler when a row is created/updated/deleted.
-// When a row is Updated, only if some "checkColumns" has changed, the "columns" will be send to
-// the handler.
+// Listen a table and notify the handler with "columns" when a row is created or updated or deleted.
+// When a row is updated, the handler is notified only if some "columns" or "checkColumns" has changed.
 func (l *Listener) Listen(table string, columns, checkColumns string, handler Handler) error {
-	manage.TryRegister(l.dbName, table, handler)
-
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
@@ -108,8 +85,6 @@ func (l *Listener) Listen(table string, columns, checkColumns string, handler Ha
 }
 
 func (l *Listener) Unlisten(table string) error {
-	manage.Unregister(l.dbName, table)
-
 	if strings.IndexByte(table, '.') < 0 {
 		table = "public." + table
 	}
@@ -120,8 +95,6 @@ func (l *Listener) Unlisten(table string) error {
 }
 
 func (l *Listener) UnlistenAll() error {
-	manage.UnregisterDB(l.dbName)
-
 	if err := l.listener.UnlistenAll(); err != nil {
 		return errs.Trace(err)
 	}

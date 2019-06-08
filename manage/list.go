@@ -49,7 +49,7 @@ func listDbTables(db string, tablesMap map[string]Cache) (string, int) {
 }
 
 func listDbTable(buf *bytes.Buffer, db, table string, cache Cache) int {
-	var datas = cache.Datas()
+	var datas = cache.GetDatas()
 	var data0 Data
 	if len(datas) > 0 {
 		data0 = datas[0]

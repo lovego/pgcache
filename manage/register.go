@@ -1,11 +1,9 @@
 package manage
 
-import (
-	"log"
-)
+import "fmt"
 
 type Cache interface {
-	Datas() []Data
+	GetDatas() []Data
 }
 
 type Data interface {
@@ -16,11 +14,7 @@ type Data interface {
 
 var cachesMap = make(map[string]map[string]Cache)
 
-func TryRegister(database, table string, ifc interface{}) {
-	cache, ok := ifc.(Cache)
-	if !ok {
-		return
-	}
+func Register(database, table string, cache Cache) error {
 	tablesMap := cachesMap[database]
 	if tablesMap == nil {
 		tablesMap = make(map[string]Cache)
@@ -28,9 +22,10 @@ func TryRegister(database, table string, ifc interface{}) {
 	}
 
 	if _, ok := tablesMap[table]; ok {
-		log.Panicf("%s.%s aready exists", database, table)
+		return fmt.Errorf("%s.%s aready exists", database, table)
 	}
 	tablesMap[table] = cache
+	return nil
 }
 
 func Unregister(database, table string) {

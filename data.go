@@ -1,4 +1,4 @@
-package cache
+package pgcache
 
 import (
 	"reflect"
@@ -157,9 +157,11 @@ func (d *Data) Data() interface{} {
 	return d.MapPtr
 }
 
+var mapKeyRegexp = regexp.MustCompile(`\[\w+\]`)
+
 func addKeyValueNames(mapType string, keyNames []string, valueName string) string {
 	i := 0
-	mapType = regexp.MustCompile(`\[\w+\]`).ReplaceAllStringFunc(mapType, func(submatch string) string {
+	mapType = mapKeyRegexp.ReplaceAllStringFunc(mapType, func(submatch string) string {
 		if i >= len(keyNames) {
 			return submatch
 		}
