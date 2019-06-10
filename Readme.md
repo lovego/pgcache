@@ -1,5 +1,5 @@
 # pgcache
-- Listen for INSERT/UPDATE/DELETE events of postgresql's table, and pass the events to a defined handler.
+- cache Postgresql table's data in memory and keep the cache up to date.
 
 [![Build Status](https://travis-ci.org/lovego/pgcache.svg?branch=master)](https://travis-ci.org/lovego/pgcache)
 [![Coverage Status](https://img.shields.io/coveralls/github/lovego/pgcache/master.svg)](https://coveralls.io/github/lovego/pgcache?branch=master)
