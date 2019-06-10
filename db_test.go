@@ -24,7 +24,7 @@ type Student struct {
 	Class string
 }
 
-func ExampleListener() {
+func Example() {
 	initStudentsTable()
 
 	var studentsMap = make(map[int64]Student)
@@ -148,4 +148,65 @@ func connectDB(dbUrl string) *sql.DB {
 		panic(err)
 	}
 	return db
+}
+
+func ExampleBigColumns() {
+	initStudentsTable()
+
+	var studentsMap = make(map[int64]Student)
+	var classesMap = make(map[string][]Student)
+	var mutex sync.RWMutex
+
+	dbCache, err := pgcache.New(dbUrl, bsql.New(testDB, time.Second), logger)
+	if err != nil {
+		panic(err)
+	}
+	tableCache, err := dbCache.Add(&pgcache.Table{
+		Name:       "students",
+		RowStruct:  Student{},
+		BigColumns: "name",
+		Datas: []*pgcache.Data{
+			{
+				RWMutex: &mutex, MapPtr: &studentsMap, MapKeys: []string{"Id"},
+			}, {
+				RWMutex: &mutex, MapPtr: &classesMap, MapKeys: []string{"Class"},
+				SortedSetUniqueKey: []string{"Id"},
+			},
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(tableCache.Columns, tableCache.BigColumns)
+	fmt.Println(tableCache.LoadSql)
+
+	// from now on, studentsMap and classesMap is always synchronized with students table.
+	fmt.Println(`init:`)
+	maps.Println(studentsMap)
+	maps.Println(classesMap)
+
+	// even you insert some rows.
+	testInsert(studentsMap, classesMap)
+	// even you update some rows.
+	testUpdate(studentsMap, classesMap)
+	// even you delete some rows.
+	testDelete(studentsMap, classesMap)
+
+	dbCache.RemoveAll()
+
+	// Output:
+	// id,class name
+	// SELECT id,class ,name FROM students
+	// init:
+	// map[1:{1 李雷 初三1班} 2:{2 韩梅梅 初三1班}]
+	// map[初三1班:[{1 李雷 初三1班} {2 韩梅梅 初三1班}]]
+	// after INSERT:
+	// map[1:{1 李雷 初三1班} 2:{2 韩梅梅 初三1班} 3:{3 Lily 初三2班} 4:{4 Lucy 初三2班}]
+	// map[初三1班:[{1 李雷 初三1班} {2 韩梅梅 初三1班}] 初三2班:[{3 Lily 初三2班} {4 Lucy 初三2班}]]
+	// after UPDATE:
+	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班} 3:{3 Lily 初三2班} 4:{4 Lucy 初三2班}]
+	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班} {3 Lily 初三2班} {4 Lucy 初三2班}]]
+	// after DELETE:
+	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班}]
+	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班}]]
 }

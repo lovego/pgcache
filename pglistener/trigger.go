@@ -59,7 +59,9 @@ func createTrigger(db *sql.DB, table string, columns, checkColumns string) error
 	dropExistingTrigger(db, table)
 
 	columns = dollarPrefix(columns)
-	checkColumns = dollarPrefix(checkColumns)
+	if checkColumns != "" {
+		checkColumns = "," + dollarPrefix(checkColumns)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -89,7 +91,7 @@ func quote(q string) string {
 }
 
 func dollarPrefix(columns string) string {
-	if columns == "" || strings.Index(columns, "$1.") >= 0 {
+	if strings.Index(columns, "$1.") >= 0 {
 		return columns
 	}
 	var result []string

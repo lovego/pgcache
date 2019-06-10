@@ -37,7 +37,7 @@ type Student struct {
 	Class string
 }
 
-func ExampleListener() {
+func Example() {
 	initStudentsTable()
 
 	var studentsMap = make(map[int64]Student)

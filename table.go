@@ -2,8 +2,10 @@ package pgcache
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
 
+	"github.com/lovego/bsql"
 	"github.com/lovego/pgcache/manage"
 )
 
@@ -16,13 +18,18 @@ type Table struct {
 	RowStruct interface{}
 
 	// The columns of the table to cache. It's got from the pg_notify payload, it must be less than
-	// 8000 bytes, use BigColumns if necessarry.
-	// If empty, the fields of "RowStruct" is used. The field name is converted to underscore style,
-	// and field with `json:"-"` tags is ignored.
+	// 8000 bytes, use "BigColumns" if necessarry.
+	// If empty, the fields of "RowStruct" which is not "BigColumns" are used.
+	// The field name is converted to underscore style, and field with `json:"-"` tag is ignored.
 	Columns string
 
 	// The big columns of the table to cache. It's got by a seperate query.
 	BigColumns string
+	// The unique fields to load "BigColumns" from db. If empty, and "RowStruct" has a "Id" Field,
+	// it's used as "BigColumnsLoadKeys".
+	BigColumnsLoadKeys []string
+	// sql to load "BigColumns"
+	bigColumnsLoadSql string
 
 	// The sql used to load initial data when a table is cached, or reload table data when the db
 	// connection lost. If empty, "Columns" and "BigColumns" is used to make a SELECT sql FROM "NAME".
@@ -108,6 +115,18 @@ func (t *Table) save(content []byte) {
 	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
 		t.logger.Error(err)
 		return
+	}
+	if t.BigColumns != "" {
+		var params = make([]interface{}, len(t.BigColumnsLoadKeys))
+		for i, key := range t.BigColumnsLoadKeys {
+			params[i] = bsql.V(row.FieldByName(key).Interface())
+		}
+		if err := t.dbQuerier.Query(row.Addr().Interface(), fmt.Sprintf(
+			t.bigColumnsLoadSql, params...,
+		)); err != nil {
+			t.logger.Error(err)
+			return
+		}
 	}
 	for _, d := range t.Datas {
 		d.save(row)

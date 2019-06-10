@@ -20,15 +20,21 @@ func (t *Table) init(dbQuerier DBQuerier, logger Logger) error {
 	}
 
 	if t.Columns == "" {
-		t.Columns = ColumnsFromStruct(t.rowStruct)
+		t.Columns = columnsFromRowStruct(t.rowStruct, t.BigColumns)
+	}
+
+	if t.BigColumns != "" {
+		if err := t.initBigColumns(); err != nil {
+			return err
+		}
 	}
 
 	if t.LoadSql == "" {
 		bigColumns := t.BigColumns
 		if bigColumns != "" {
-			bigColumns = ", " + bigColumns
+			bigColumns = "," + bigColumns
 		}
-		t.LoadSql = fmt.Sprintf("SELECT %s %s FROM %s", t.Columns, t.BigColumns, t.Name)
+		t.LoadSql = fmt.Sprintf("SELECT %s %s FROM %s", t.Columns, bigColumns, t.Name)
 	}
 
 	if len(t.Datas) == 0 {
@@ -44,10 +50,45 @@ func (t *Table) init(dbQuerier DBQuerier, logger Logger) error {
 	return nil
 }
 
-func ColumnsFromStruct(rowStruct reflect.Type) string {
+func (t *Table) initBigColumns() error {
+	if len(t.BigColumnsLoadKeys) == 0 {
+		if _, ok := t.rowStruct.FieldByName("Id"); ok {
+			t.BigColumnsLoadKeys = []string{"Id"}
+		} else {
+			return errors.New("BigColumnsLoadKeys is required.")
+		}
+	} else {
+		for _, field := range t.BigColumnsLoadKeys {
+			if _, ok := t.rowStruct.FieldByName(field); !ok {
+				return fmt.Errorf(`illegal field "%s" in BigColumnsLoadKeys`, field)
+			}
+		}
+	}
+	var columns []string
+	for _, field := range t.BigColumnsLoadKeys {
+		columns = append(columns, Field2Column(field)+" = %s")
+	}
+	t.bigColumnsLoadSql = fmt.Sprintf(`SELECT %s FROM %s WHERE `, t.BigColumns, t.Name) +
+		strings.Join(columns, " AND ")
+
+	return nil
+}
+
+func columnsFromRowStruct(rowStruct reflect.Type, exclude string) string {
+	var excluding []string
+	if exclude != "" {
+		excluding = strings.Split(exclude, ",")
+		for i := range excluding {
+			excluding[i] = strings.TrimSpace(excluding[i])
+		}
+	}
+
 	var result []string
 	traverseStructFields(rowStruct, func(field reflect.StructField) {
-		result = append(result, Field2Column(field.Name))
+		column := Field2Column(field.Name)
+		if len(excluding) == 0 || notIn(column, excluding) {
+			result = append(result, column)
+		}
 	})
 	return strings.Join(result, ",")
 }
@@ -97,4 +138,13 @@ func Field2Column(str string) string {
 		}
 	}
 	return strings.ToLower(strings.Join(slice, "_"))
+}
+
+func notIn(s string, slice []string) bool {
+	for i := range slice {
+		if slice[i] == s {
+			return false
+		}
+	}
+	return true
 }
