@@ -47,7 +47,7 @@ func ExampleListener_Listen() {
 	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 	// Delete public.students
-	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
+	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 	// ConnLoss public.students
 	// Create public.students
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
@@ -55,7 +55,7 @@ func ExampleListener_Listen() {
 	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 	// Delete public.students
-	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-10"}
+	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 }
 
 func testCreateUpdateDelete(table string) {
@@ -68,8 +68,7 @@ func testCreateUpdateDelete(table string) {
 	}
 	if err := listener.Listen(
 		table,
-		"$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time",
-		"$1.id, $1.name",
+		"$1.id, $1.name, to_char($1.time, 'YYYY-MM-DD') as time", "",
 		testHandler{},
 	); err != nil {
 		panic(errs.WithStack(err))
@@ -88,7 +87,7 @@ func testCreateUpdateDelete(table string) {
 	}
 	// this one should not be notified
 	if _, err = testDB.Exec(`
-    UPDATE students SET time = '2018-09-10 15:57:00+08'
+    UPDATE students SET time = '2018-09-09 15:57:00+08'
   `); err != nil {
 		panic(err)
 	}

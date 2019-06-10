@@ -12,7 +12,6 @@ import (
 	loggerPkg "github.com/lovego/logger"
 	"github.com/lovego/maps"
 	"github.com/lovego/pgcache"
-	"github.com/lovego/pglistener/cache"
 )
 
 var dbUrl = getTestDataSource()
@@ -36,18 +35,19 @@ func ExampleListener() {
 	if err != nil {
 		panic(err)
 	}
-	if tableCache, err := dbCache.Add(&Table{
+	_, err = dbCache.Add(&pgcache.Table{
 		Name:      "students",
 		RowStruct: Student{},
-		Datas: []cache.Data{
+		Datas: []*pgcache.Data{
 			{
-				RWMutex: &mutex, MapPtr: studentsMap, MapKeys: []string{"Id"},
+				RWMutex: &mutex, MapPtr: &studentsMap, MapKeys: []string{"Id"},
 			}, {
-				RWMutex: &mutex, MapPtr: classesMap, MapKeys: []string{"Class"},
+				RWMutex: &mutex, MapPtr: &classesMap, MapKeys: []string{"Class"},
 				SortedSetUniqueKey: []string{"Id"},
 			},
 		},
-	}); err != nil {
+	})
+	if err != nil {
 		panic(err)
 	}
 
@@ -63,7 +63,7 @@ func ExampleListener() {
 	// even you delete some rows.
 	testDelete(studentsMap, classesMap)
 
-	dbCache.UnlistenAll()
+	dbCache.RemoveAll()
 
 	// Output:
 	// init:
@@ -113,7 +113,7 @@ VALUES
 }
 
 func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) {
-	if _, err := testDB.Exec(`UPDATE students SET class = '初三2班'`); err != nil {
+	if _, err := testDB.Exec(`UPDATE students SET "class" = '初三2班'`); err != nil {
 		panic(err)
 	}
 	time.Sleep(10 * time.Millisecond)

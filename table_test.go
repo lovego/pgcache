@@ -1,6 +1,7 @@
 package pgcache
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"reflect"
@@ -22,37 +23,46 @@ func (q testQuerier) Query(data interface{}, sql string, args ...interface{}) er
 	return nil
 }
 
-func ExampleHandler() {
+func (q testQuerier) GetDB() *sql.DB {
+	return nil
+}
+
+func ExampleTable() {
 	var m1 map[int]map[string]int
 	var m2 map[string]map[int]int
 
 	var mutex sync.RWMutex
-	h := New(Table{Name: "scores"}, Score{}, []Data{
-		{RWMutex: &mutex, MapPtr: &m1, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score"},
-		{RWMutex: &mutex, MapPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, MapValue: "Score"},
-	}, testQuerier{}, testLogger)
+	t := &Table{
+		Name:      "scores",
+		RowStruct: Score{},
+		Datas: []*Data{
+			{RWMutex: &mutex, MapPtr: &m1, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score"},
+			{RWMutex: &mutex, MapPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, MapValue: "Score"},
+		},
+	}
+	t.init(testQuerier{}, testLogger)
 
-	h.ConnLoss("")
+	t.ConnLoss("")
 	maps.Println(m1, m2)
 
-	h.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
+	t.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
 	maps.Println(m1, m2)
 
-	h.Update("",
+	t.Update("",
 		[]byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`),
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
 	maps.Println(m1, m2)
 
-	h.Delete("",
+	t.Delete("",
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
 	maps.Println(m1, m2)
 
-	h.Clear()
+	t.Clear()
 	maps.Println(m1, m2)
 
-	h.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
+	t.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
 	maps.Println(m1, m2)
 
 	// Output:

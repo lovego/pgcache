@@ -22,9 +22,9 @@ func createPGFunction(db *sql.DB) error {
       new_record record;
       data jsonb;
     begin
-      if tg_op = 'UPDATE' and tg_argv[1] != '' then
-        execute 'select ' || tg_argv[1] into old_record using old;
-        execute 'select ' || tg_argv[1] into new_record using new;
+      if tg_op = 'UPDATE' then
+        execute 'select ' || tg_argv[0] || tg_argv[1] into old_record using old;
+        execute 'select ' || tg_argv[0] || tg_argv[1] into new_record using new;
         if old_record = new_record then
           return null;
         end if;
@@ -89,7 +89,7 @@ func quote(q string) string {
 }
 
 func dollarPrefix(columns string) string {
-	if strings.Index(columns, "$1.") >= 0 {
+	if columns == "" || strings.Index(columns, "$1.") >= 0 {
 		return columns
 	}
 	var result []string

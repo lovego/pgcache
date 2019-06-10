@@ -14,7 +14,7 @@ func (d *Data) init(rowStruct reflect.Type) error {
 	d.mapV = reflect.ValueOf(d.MapPtr)
 	typ := d.mapV.Type()
 	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Map || d.mapV.IsNil() {
-		return errors.New("Data.Map should be a non nil pointer to a map.")
+		return errors.New("Data.MapPtr should be a non nil pointer to a map.")
 	}
 	d.mapV = d.mapV.Elem()
 

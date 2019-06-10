@@ -32,10 +32,10 @@ type Table struct {
 	Datas []*Data
 
 	// db querier to load data from a table.
-	DbQuerier DBQuerier
+	dbQuerier DBQuerier
 
 	// errors are logged using this logger.
-	Logger Logger
+	logger Logger
 
 	rowStruct reflect.Type
 }
@@ -55,13 +55,13 @@ func (t *Table) Delete(table string, content []byte) {
 
 func (t *Table) ConnLoss(table string) {
 	if err := t.Reload(); err != nil {
-		t.Logger.Error(err)
+		t.logger.Error(err)
 	}
 }
 
 func (t *Table) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(t.rowStruct)).Elem()
-	if err := t.DbQuerier.Query(rows.Addr().Interface(), t.LoadSql); err != nil {
+	if err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql); err != nil {
 		return err
 	}
 	t.Clear()
@@ -106,7 +106,7 @@ func (t *Table) GetDatas() []manage.Data {
 func (t *Table) save(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
 	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
-		t.Logger.Error(err)
+		t.logger.Error(err)
 		return
 	}
 	for _, d := range t.Datas {
@@ -117,7 +117,7 @@ func (t *Table) save(content []byte) {
 func (t *Table) remove(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
 	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
-		t.Logger.Error(err)
+		t.logger.Error(err)
 		return
 	}
 	for _, d := range t.Datas {

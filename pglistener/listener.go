@@ -15,6 +15,8 @@ import (
 	"github.com/lovego/errs"
 )
 
+// Listen for INSERT/UPDATE/DELETE events of postgresql's table,
+// and pass the events to defined handlers.
 type Listener struct {
 	db       *sql.DB // db to create func and triggers
 	listener *pq.Listener

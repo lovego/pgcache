@@ -9,7 +9,7 @@ import (
 	"github.com/lovego/struct_tag"
 )
 
-func (t *Table) init() error {
+func (t *Table) init(dbQuerier DBQuerier, logger Logger) error {
 	if t.Name == "" {
 		return errors.New("Name should not be empty.")
 	}
@@ -39,6 +39,7 @@ func (t *Table) init() error {
 			return err
 		}
 	}
+	t.dbQuerier, t.logger = dbQuerier, logger
 
 	return nil
 }

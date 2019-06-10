@@ -10,8 +10,10 @@ import (
 )
 
 type DB struct {
-	name     string
-	listener *pglistener.Listener
+	name      string
+	listener  *pglistener.Listener
+	dbQuerier DBQuerier
+	logger    Logger
 }
 
 type DBQuerier interface {
@@ -35,11 +37,11 @@ func New(dbAddr string, dbQuerier DBQuerier, logger Logger) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{name: dbName, listener: listener}, nil
+	return &DB{name: dbName, listener: listener, dbQuerier: dbQuerier, logger: logger}, nil
 }
 
 func (db *DB) Add(table *Table) (*Table, error) {
-	if err := table.init(); err != nil {
+	if err := table.init(db.dbQuerier, db.logger); err != nil {
 		return nil, err
 	}
 	if err := db.listener.Listen(table.Name, table.Columns, table.BigColumns, table); err != nil {
