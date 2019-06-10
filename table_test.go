@@ -36,8 +36,8 @@ func ExampleTable() {
 		Name:      "scores",
 		RowStruct: Score{},
 		Datas: []*Data{
-			{RWMutex: &mutex, MapPtr: &m1, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score"},
-			{RWMutex: &mutex, MapPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, MapValue: "Score"},
+			{RWMutex: &mutex, DataPtr: &m1, MapKeys: []string{"StudentId", "Subject"}, Value: "Score"},
+			{RWMutex: &mutex, DataPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, Value: "Score"},
 		},
 	}
 	t.init(testQuerier{}, testLogger)

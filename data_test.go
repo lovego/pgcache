@@ -30,7 +30,7 @@ func ExampleData_precond_1() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
@@ -46,7 +46,7 @@ func ExampleData_precond_2() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "Valid2",
 	}
 	d.init(reflect.TypeOf(Score{}))
@@ -62,7 +62,7 @@ func ExampleData_save_remove_clear() {
 	var m map[int]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId"}, Value: "Score",
 		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
@@ -102,7 +102,7 @@ func ExampleData_save_remove_clear_sorted_sets() {
 	var m map[int][]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId"}, Value: "Score",
 		Precond: "Valid",
 	}
 	d.init(reflect.TypeOf(Score{}))
@@ -145,7 +145,7 @@ func ExampleData_save_remove_clear_sorted_sets_2() {
 	var m map[int][]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"}, SortedSetUniqueKey: []string{"Subject"},
+		DataPtr: &m, MapKeys: []string{"StudentId"}, SortedSetUniqueKey: []string{"Subject"},
 	}
 	d.init(reflect.TypeOf(Score{}))
 	rows := reflect.ValueOf([]Score{
@@ -186,7 +186,7 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	var m map[int]map[string][]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "Score",
 	}
 	d.init(reflect.TypeOf(Score{}))
 	rows := reflect.ValueOf([]Score{
@@ -213,7 +213,7 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	maps.Println(m)
 
 	m = make(map[int]map[string][]int)
-	fmt.Println(d.mapV)
+	fmt.Println(d.dataV)
 
 	// Output:
 	// map[1001:map[语文:[98 99]] 1002:map[数学:[90 91]] 1003:map[数学:[100] 语文:[99]]]

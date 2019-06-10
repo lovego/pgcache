@@ -13,46 +13,46 @@ func ExampleData_init_nilMutex() {
 	// Data.RWMutex is nil.
 }
 
-func ExampleData_init_invalidMapPtr_1() {
+func ExampleData_init_invalidDataPtr_1() {
 	mutex := sync.RWMutex{}
 
-	d := Data{RWMutex: &mutex, MapPtr: map[int]int{}}
+	d := Data{RWMutex: &mutex, DataPtr: map[int]int{}}
 	fmt.Println(d.init(nil))
 	// Output:
-	// Data.MapPtr should be a non nil pointer to a map.
+	// Data.DataPtr should be a non nil pointer to a map or slice.
 }
 
-func ExampleData_init_invalidMapPtr_2() {
+func ExampleData_init_invalidDataPtr_2() {
 	mutex := sync.RWMutex{}
 	var p *map[int]int
-	d := Data{RWMutex: &mutex, MapPtr: p}
+	d := Data{RWMutex: &mutex, DataPtr: p}
 	fmt.Println(d.init(nil))
 	// Output:
-	// Data.MapPtr should be a non nil pointer to a map.
+	// Data.DataPtr should be a non nil pointer to a map or slice.
 }
 
 func ExampleData_init_invalidMapKeys_1() {
 	mutex := sync.RWMutex{}
 	var m map[int]int
-	d := Data{RWMutex: &mutex, MapPtr: &m}
+	d := Data{RWMutex: &mutex, DataPtr: &m}
 	fmt.Println(d.init(nil))
 	// Output:
-	// Data.Map has depth: 1, but Data.MapKeys has 0 field.
+	// Data.DataPtr is a 1 layers map, but Data.MapKeys has 0 field.
 }
 
 func ExampleData_init_invalidMapKeys_2() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]int
-	d := Data{RWMutex: &mutex, MapPtr: &m, MapKeys: []string{"StudentId", "Subject", "Other"}}
+	d := Data{RWMutex: &mutex, DataPtr: &m, MapKeys: []string{"StudentId", "Subject", "Other"}}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
-	// Data.Map has depth: 2, but Data.MapKeys has 3 field.
+	// Data.DataPtr is a 2 layers map, but Data.MapKeys has 3 field.
 }
 
 func ExampleData_init_invalidMapKeys_3() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]int
-	d := Data{RWMutex: &mutex, MapPtr: &m, MapKeys: []string{"Student", "Subject"}}
+	d := Data{RWMutex: &mutex, DataPtr: &m, MapKeys: []string{"Student", "Subject"}}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
 	// Data.MapKeys[0]: Student, no such field in row struct.
@@ -61,34 +61,34 @@ func ExampleData_init_invalidMapKeys_3() {
 func ExampleData_init_invalidMapKeys_4() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]int
-	d := Data{RWMutex: &mutex, MapPtr: &m, MapKeys: []string{"Subject", "StudentId"}}
+	d := Data{RWMutex: &mutex, DataPtr: &m, MapKeys: []string{"Subject", "StudentId"}}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
 	// Data.MapKeys[0]: Subject, type string is not assignable to int.
 }
 
-func ExampleData_init_invalidMapValue_1() {
+func ExampleData_init_invalidValue_1() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "theScore",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "theScore",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
-	// Data.MapValue: theScore, no such field in row struct.
+	// Data.Value: theScore, no such field in row struct.
 }
 
-func ExampleData_init_invalidMapValue_2() {
+func ExampleData_init_invalidValue_2() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]float32
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "Score",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
-	// Data.MapValue: Score, type int is not assignable to float32.
+	// Data.Value: Score, type int is not assignable to float32.
 }
 
 func ExampleData_init_invalidSortedSetUniqueKey_1() {
@@ -96,7 +96,7 @@ func ExampleData_init_invalidSortedSetUniqueKey_1() {
 	var m map[int]map[string]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "Score",
 		SortedSetUniqueKey: []string{"Other"},
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -109,7 +109,7 @@ func ExampleData_init_invalidSortedSetUniqueKey_2() {
 	var m map[int]map[string][]int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "Score",
 		SortedSetUniqueKey: []string{"Other"},
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -122,7 +122,7 @@ func ExampleData_init_invalidSortedSetUniqueKey_3() {
 	var m map[int][]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{},
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -135,7 +135,7 @@ func ExampleData_init_invalidSortedSetUniqueKey_4() {
 	var m map[int][]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{"Other"},
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -152,7 +152,7 @@ func ExampleData_init_invalidSortedSetUniqueKey_5() {
 	var m map[int][]score2
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{"ScoreFloat"},
 	}
 	fmt.Println(d.init(reflect.TypeOf(score2{})))
@@ -165,7 +165,7 @@ func ExampleData_init_flags1() {
 	var m map[int]map[string][]*int
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId", "Subject"}, MapValue: "Score",
+		DataPtr: &m, MapKeys: []string{"StudentId", "Subject"}, Value: "Score",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	fmt.Println(d.isSortedSets, d.realValueIsPointer)
@@ -179,7 +179,7 @@ func ExampleData_init_flags2() {
 	var m map[int][]*Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		SortedSetUniqueKey: []string{"Subject"},
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -194,7 +194,7 @@ func ExampleData_init_invalidPrecond_1() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "None",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -207,7 +207,7 @@ func ExampleData_init_invalidPrecond_2() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "Other",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -220,7 +220,7 @@ func ExampleData_init_validPrecond_1() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "Valid",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
@@ -235,7 +235,7 @@ func ExampleData_init_validPrecond_2() {
 	var m map[int]Score
 	d := Data{
 		RWMutex: &mutex,
-		MapPtr:  &m, MapKeys: []string{"StudentId"},
+		DataPtr: &m, MapKeys: []string{"StudentId"},
 		Precond: "Valid2",
 	}
 	fmt.Println(d.init(reflect.TypeOf(Score{})))

@@ -53,9 +53,9 @@ func Example() {
 		RowStruct: Student{},
 		Datas: []*pgcache.Data{
 			{
-				RWMutex: &mutex, MapPtr: &studentsMap, MapKeys: []string{"Id"},
+				RWMutex: &mutex, DataPtr: &studentsMap, MapKeys: []string{"Id"},
 			}, {
-				RWMutex: &mutex, MapPtr: &classesMap, MapKeys: []string{"Class"},
+				RWMutex: &mutex, DataPtr: &classesMap, MapKeys: []string{"Class"},
 				SortedSetUniqueKey: []string{"Id"},
 			},
 		},

@@ -11,15 +11,15 @@ import (
 
 type Data struct {
 	*sync.RWMutex
-	// MapPtr is a pointer to a map to store data, required.
-	MapPtr interface{}
-	// MapKeys is the field names to get map keys from row struct, required.
+	// DataPtr is a pointer to a map or slice to store data, required.
+	DataPtr interface{}
+	// MapKeys is the field names to get map keys from row struct, required if DataPtr is a map.
 	MapKeys []string
-	// MapValue is the field name to get map value from row struct.
-	// If it's empty, the whole row struct is used as map value.
-	MapValue string
+	// Value is the field name to get map or slice value from row struct.
+	// If it's empty, the whole row struct is used.
+	Value string
 
-	// If the map value is a slice, it's used as sorted set. If it's a sorted set of struct,
+	// If the DataPtr or map value is a slice, it's used as sorted set. If it's a sorted set of struct,
 	// SortedSetUniqueKey is required, it specifies the fields used as unique key.
 	SortedSetUniqueKey []string
 
@@ -34,11 +34,11 @@ type Data struct {
 	manageKey  string
 	manageType string
 
-	// the map value to store data
-	mapV reflect.Value
+	// the data value to store data
+	dataV reflect.Value
 	// map value is a sorted set
 	isSortedSets bool
-	// real map value is a pointer of the row struct or row struct's {MapValue} field.
+	// real map value is a pointer of the row struct or row struct's {Value} field.
 	realValueIsPointer bool
 	// negative if no Preprocess present.
 	preprocessMethodIndex int
@@ -54,7 +54,15 @@ func (d *Data) save(row reflect.Value) {
 	d.Lock()
 	defer d.Unlock()
 
-	mapV := d.mapV
+	if d.dataV.Kind() == reflect.Slice {
+		d.dataV.Set(sorted_sets.SaveValue(d.dataV, d.getValue(row), d.SortedSetUniqueKey...))
+	} else {
+		d.saveToMap(row)
+	}
+}
+
+func (d *Data) saveToMap(row reflect.Value) {
+	mapV := d.dataV
 	if mapV.IsNil() {
 		mapV.Set(reflect.MakeMap(mapV.Type()))
 	}
@@ -71,13 +79,7 @@ func (d *Data) save(row reflect.Value) {
 	}
 
 	key := row.FieldByName(d.MapKeys[len(d.MapKeys)-1])
-	value := row
-	if d.MapValue != "" {
-		value = row.FieldByName(d.MapValue)
-	}
-	if d.realValueIsPointer {
-		value = value.Addr()
-	}
+	value := d.getValue(row)
 	if d.isSortedSets {
 		value = sorted_sets.SaveValue(mapV.MapIndex(key), value, d.SortedSetUniqueKey...)
 	}
@@ -92,7 +94,15 @@ func (d *Data) remove(row reflect.Value) {
 	d.Lock()
 	defer d.Unlock()
 
-	mapV := d.mapV
+	if d.dataV.Kind() == reflect.Slice {
+		d.dataV.Set(sorted_sets.RemoveValue(d.dataV, d.getValue(row), d.SortedSetUniqueKey...))
+	} else {
+		d.removeFromMap(row)
+	}
+}
+
+func (d *Data) removeFromMap(row reflect.Value) {
+	mapV := d.dataV
 	for i := 0; i < len(d.MapKeys)-1; i++ {
 		key := row.FieldByName(d.MapKeys[i])
 		mapV = mapV.MapIndex(key)
@@ -106,11 +116,7 @@ func (d *Data) remove(row reflect.Value) {
 		if !slice.IsValid() {
 			return
 		}
-		value := row
-		if d.MapValue != "" {
-			value = row.FieldByName(d.MapValue)
-		}
-		slice = sorted_sets.RemoveValue(slice, value, d.SortedSetUniqueKey...)
+		slice = sorted_sets.RemoveValue(slice, d.getValue(row), d.SortedSetUniqueKey...)
 		if !slice.IsValid() || slice.Len() == 0 {
 			mapV.SetMapIndex(key, reflect.Value{})
 		} else {
@@ -124,7 +130,18 @@ func (d *Data) remove(row reflect.Value) {
 func (d *Data) clear() {
 	d.Lock()
 	defer d.Unlock()
-	d.mapV.Set(reflect.MakeMap(d.mapV.Type()))
+	d.dataV.Set(reflect.MakeMap(d.dataV.Type()))
+}
+
+func (d *Data) getValue(row reflect.Value) reflect.Value {
+	value := row
+	if d.Value != "" {
+		value = row.FieldByName(d.Value)
+	}
+	if d.realValueIsPointer {
+		value = value.Addr()
+	}
+	return value
 }
 
 func (d *Data) preprocess(row reflect.Value) {
@@ -144,17 +161,17 @@ func (d *Data) precond(row reflect.Value) bool {
 
 func (d *Data) Key() string {
 	if d.manageKey == `` {
-		d.manageKey = addKeyValueNames(d.mapV.Type().String(), d.MapKeys, d.MapValue)
+		d.manageKey = addKeyValueNames(d.dataV.Type().String(), d.MapKeys, d.Value)
 	}
 	return d.manageKey
 }
 
 func (d *Data) Size() int {
-	return d.mapV.Len()
+	return d.dataV.Len()
 }
 
 func (d *Data) Data() interface{} {
-	return d.MapPtr
+	return d.DataPtr
 }
 
 var mapKeyRegexp = regexp.MustCompile(`\[\w+\]`)

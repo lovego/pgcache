@@ -11,12 +11,13 @@ func (d *Data) init(rowStruct reflect.Type) error {
 		return errors.New("Data.RWMutex is nil.")
 	}
 
-	d.mapV = reflect.ValueOf(d.MapPtr)
-	typ := d.mapV.Type()
-	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Map || d.mapV.IsNil() {
-		return errors.New("Data.MapPtr should be a non nil pointer to a map.")
+	d.dataV = reflect.ValueOf(d.DataPtr)
+	typ := d.dataV.Type()
+	if typ.Kind() != reflect.Ptr || d.dataV.IsNil() ||
+		(typ.Elem().Kind() != reflect.Map && typ.Elem().Kind() != reflect.Slice) {
+		return errors.New("Data.DataPtr should be a non nil pointer to a map or slice.")
 	}
-	d.mapV = d.mapV.Elem()
+	d.dataV = d.dataV.Elem()
 
 	innerType, err := d.checkMapKeys(rowStruct)
 	if err != nil {
@@ -26,7 +27,7 @@ func (d *Data) init(rowStruct reflect.Type) error {
 		innerType = innerType.Elem()
 		d.isSortedSets = true
 	}
-	valueType, err := d.checkMapValue(rowStruct, innerType)
+	valueType, err := d.checkValue(rowStruct, innerType)
 	if err != nil {
 		return err
 	}
@@ -40,18 +41,26 @@ func (d *Data) init(rowStruct reflect.Type) error {
 }
 
 func (d *Data) checkMapKeys(rowStruct reflect.Type) (reflect.Type, error) {
-	depth := 0
-	typ := d.mapV.Type()
-	for ; typ.Kind() == reflect.Map; depth++ {
-		if err := d.checkMapKey(depth, rowStruct, typ.Key()); err != nil {
+	typ := d.dataV.Type()
+	if typ.Kind() == reflect.Slice {
+		if len(d.MapKeys) > 0 {
+			return nil, errors.New("DataPtr is a slice, so Data.MapKeys should be empty.")
+		} else {
+			return typ, nil
+		}
+	}
+
+	layers := 0
+	for ; typ.Kind() == reflect.Map; layers++ {
+		if err := d.checkMapKey(layers, rowStruct, typ.Key()); err != nil {
 			return nil, err
 		}
 		typ = typ.Elem()
 	}
 
-	if depth != len(d.MapKeys) {
+	if layers != len(d.MapKeys) {
 		return nil, fmt.Errorf(
-			"Data.Map has depth: %d, but Data.MapKeys has %d field.", depth, len(d.MapKeys),
+			"Data.DataPtr is a %d layers map, but Data.MapKeys has %d field.", layers, len(d.MapKeys),
 		)
 	}
 	return typ, nil
@@ -74,13 +83,13 @@ func (d *Data) checkMapKey(i int, rowStruct, keyType reflect.Type) error {
 	return nil
 }
 
-func (d *Data) checkMapValue(rowStruct, realValueType reflect.Type) (reflect.Type, error) {
+func (d *Data) checkValue(rowStruct, realValueType reflect.Type) (reflect.Type, error) {
 	valueType := rowStruct
-	if d.MapValue != "" {
-		if field, ok := rowStruct.FieldByName(d.MapValue); ok {
+	if d.Value != "" {
+		if field, ok := rowStruct.FieldByName(d.Value); ok {
 			valueType = field.Type
 		} else {
-			return nil, fmt.Errorf("Data.MapValue: %s, no such field in row struct.", d.MapValue)
+			return nil, fmt.Errorf("Data.Value: %s, no such field in row struct.", d.Value)
 		}
 	}
 	if !valueType.AssignableTo(realValueType) {
@@ -88,7 +97,7 @@ func (d *Data) checkMapValue(rowStruct, realValueType reflect.Type) (reflect.Typ
 			d.realValueIsPointer = true
 		} else {
 			return nil, fmt.Errorf(
-				"Data.MapValue: %s, type %v is not assignable to %v.", d.MapValue, valueType, realValueType,
+				"Data.Value: %s, type %v is not assignable to %v.", d.Value, valueType, realValueType,
 			)
 		}
 	}
