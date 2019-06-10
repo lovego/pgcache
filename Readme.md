@@ -9,7 +9,7 @@
 ## Install
 `$ go get github.com/lovego/pgcache`
 
-## Example (cache a table)
+## Example
 ```go
 package pgcache_test
 
