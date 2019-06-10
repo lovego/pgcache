@@ -44,7 +44,7 @@ func (d *Data) checkMapKeys(rowStruct reflect.Type) (reflect.Type, error) {
 	typ := d.dataV.Type()
 	if typ.Kind() == reflect.Slice {
 		if len(d.MapKeys) > 0 {
-			return nil, errors.New("DataPtr is a slice, so Data.MapKeys should be empty.")
+			return nil, errors.New("Data.DataPtr is a slice, so Data.MapKeys should be empty.")
 		} else {
 			return typ, nil
 		}

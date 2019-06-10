@@ -130,7 +130,11 @@ func (d *Data) removeFromMap(row reflect.Value) {
 func (d *Data) clear() {
 	d.Lock()
 	defer d.Unlock()
-	d.dataV.Set(reflect.MakeMap(d.dataV.Type()))
+	if d.dataV.Kind() == reflect.Slice {
+		d.dataV.Set(reflect.MakeSlice(d.dataV.Type(), 0, d.dataV.Cap()))
+	} else {
+		d.dataV.Set(reflect.MakeMap(d.dataV.Type()))
+	}
 }
 
 func (d *Data) getValue(row reflect.Value) reflect.Value {

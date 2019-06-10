@@ -150,11 +150,12 @@ func connectDB(dbUrl string) *sql.DB {
 	return db
 }
 
-func ExampleBigColumns() {
+func Example2() {
 	initStudentsTable()
 
 	var studentsMap = make(map[int64]Student)
 	var classesMap = make(map[string][]Student)
+	var studentsSlice = make([]Student, 0, 4)
 	var mutex sync.RWMutex
 
 	dbCache, err := pgcache.New(dbUrl, bsql.New(testDB, time.Second), logger)
@@ -171,6 +172,8 @@ func ExampleBigColumns() {
 			}, {
 				RWMutex: &mutex, DataPtr: &classesMap, MapKeys: []string{"Class"},
 				SortedSetUniqueKey: []string{"Id"},
+			}, {
+				RWMutex: &mutex, DataPtr: &studentsSlice, SortedSetUniqueKey: []string{"Id"},
 			},
 		},
 	})
@@ -184,13 +187,17 @@ func ExampleBigColumns() {
 	fmt.Println(`init:`)
 	maps.Println(studentsMap)
 	maps.Println(classesMap)
+	maps.Println(studentsSlice)
 
 	// even you insert some rows.
 	testInsert(studentsMap, classesMap)
+	maps.Println(studentsSlice)
 	// even you update some rows.
 	testUpdate(studentsMap, classesMap)
+	maps.Println(studentsSlice)
 	// even you delete some rows.
 	testDelete(studentsMap, classesMap)
+	maps.Println(studentsSlice)
 
 	dbCache.RemoveAll()
 
@@ -200,13 +207,17 @@ func ExampleBigColumns() {
 	// init:
 	// map[1:{1 李雷 初三1班} 2:{2 韩梅梅 初三1班}]
 	// map[初三1班:[{1 李雷 初三1班} {2 韩梅梅 初三1班}]]
+	// [{1 李雷 初三1班} {2 韩梅梅 初三1班}]
 	// after INSERT:
 	// map[1:{1 李雷 初三1班} 2:{2 韩梅梅 初三1班} 3:{3 Lily 初三2班} 4:{4 Lucy 初三2班}]
 	// map[初三1班:[{1 李雷 初三1班} {2 韩梅梅 初三1班}] 初三2班:[{3 Lily 初三2班} {4 Lucy 初三2班}]]
+	// [{1 李雷 初三1班} {2 韩梅梅 初三1班} {3 Lily 初三2班} {4 Lucy 初三2班}]
 	// after UPDATE:
 	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班} 3:{3 Lily 初三2班} 4:{4 Lucy 初三2班}]
 	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班} {3 Lily 初三2班} {4 Lucy 初三2班}]]
+	// [{1 李雷 初三2班} {2 韩梅梅 初三2班} {3 Lily 初三2班} {4 Lucy 初三2班}]
 	// after DELETE:
 	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班}]
 	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班}]]
+	// [{1 李雷 初三2班} {2 韩梅梅 初三2班}]
 }

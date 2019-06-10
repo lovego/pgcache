@@ -67,6 +67,15 @@ func ExampleData_init_invalidMapKeys_4() {
 	// Data.MapKeys[0]: Subject, type string is not assignable to int.
 }
 
+func ExampleData_init_invalidMapKeys_5() {
+	mutex := sync.RWMutex{}
+	var s []int
+	d := Data{RWMutex: &mutex, DataPtr: &s, MapKeys: []string{"Subject", "StudentId"}}
+	fmt.Println(d.init(reflect.TypeOf(Score{})))
+	// Output:
+	// Data.DataPtr is a slice, so Data.MapKeys should be empty.
+}
+
 func ExampleData_init_invalidValue_1() {
 	mutex := sync.RWMutex{}
 	var m map[int]map[string]int
@@ -89,6 +98,18 @@ func ExampleData_init_invalidValue_2() {
 	fmt.Println(d.init(reflect.TypeOf(Score{})))
 	// Output:
 	// Data.Value: Score, type int is not assignable to float32.
+}
+
+func ExampleData_init_invalidValue_3() {
+	mutex := sync.RWMutex{}
+	var s []*Score
+	d := Data{
+		RWMutex: &mutex,
+		DataPtr: &s, Value: "Score",
+	}
+	fmt.Println(d.init(reflect.TypeOf(Score{})))
+	// Output:
+	// Data.Value: Score, type int is not assignable to *pgcache.Score.
 }
 
 func ExampleData_init_invalidSortedSetUniqueKey_1() {
