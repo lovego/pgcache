@@ -210,7 +210,7 @@ func getTestDataSource() string {
 	} else if runtime.GOOS == "darwin" {
 		return "postgres://postgres:@localhost/test?sslmode=disable"
 	} else {
-		return "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
+		return "postgres://travis:123456@localhost:5432/travis?sslmode=disable"
 	}
 }
 
