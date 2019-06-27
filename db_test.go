@@ -132,24 +132,6 @@ func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) 
 	maps.Println(classesMap)
 }
 
-func getTestDataSource() string {
-	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
-		return env
-	} else if runtime.GOOS == "darwin" {
-		return "postgres://postgres:@localhost/test?sslmode=disable"
-	} else {
-		return "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
-	}
-}
-
-func connectDB(dbUrl string) *sql.DB {
-	db, err := sql.Open(`postgres`, dbUrl)
-	if err != nil {
-		panic(err)
-	}
-	return db
-}
-
 func Example2() {
 	initStudentsTable()
 
@@ -220,4 +202,22 @@ func Example2() {
 	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班}]
 	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班}]]
 	// [{1 李雷 初三2班} {2 韩梅梅 初三2班}]
+}
+
+func getTestDataSource() string {
+	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
+		return env
+	} else if runtime.GOOS == "darwin" {
+		return "postgres://postgres:@localhost/test?sslmode=disable"
+	} else {
+		return "postgres://travis:123456@localhost:5433/travis?sslmode=disable"
+	}
+}
+
+func connectDB(dbUrl string) *sql.DB {
+	db, err := sql.Open(`postgres`, dbUrl)
+	if err != nil {
+		panic(err)
+	}
+	return db
 }
