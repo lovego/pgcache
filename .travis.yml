@@ -16,6 +16,7 @@ env:
 install:
   - go get -t ./...
 before_script:
+  - pwd && ls -l
   - sudo -u postgres psql -c "ALTER USER travis WITH PASSWORD '123456'"
 script:
   - |
