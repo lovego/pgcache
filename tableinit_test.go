@@ -12,7 +12,7 @@ func ExampleTable_init() {
 			Z bool `json:"-"`
 		}{},
 	}
-	t.init(testQuerier{}, testLogger)
+	t.init("", testQuerier{}, testLogger)
 	fmt.Println(t.Columns)
 	fmt.Println(t.BigColumns)
 	fmt.Println(t.LoadSql)
@@ -29,7 +29,7 @@ func ExampleTable_init_bigColumns() {
 		BigColumns:         "score",
 		BigColumnsLoadKeys: []string{"StudentId", "Subject"},
 	}
-	t.init(testQuerier{}, testLogger)
+	t.init("", testQuerier{}, testLogger)
 	fmt.Println(t.Columns)
 	fmt.Println(t.BigColumns)
 	fmt.Println(t.bigColumnsLoadSql)

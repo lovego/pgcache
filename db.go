@@ -41,7 +41,7 @@ func New(dbAddr string, dbQuerier DBQuerier, logger Logger) (*DB, error) {
 }
 
 func (db *DB) Add(table *Table) (*Table, error) {
-	if err := table.init(db.dbQuerier, db.logger); err != nil {
+	if err := table.init(db.name, db.dbQuerier, db.logger); err != nil {
 		return nil, err
 	}
 	if err := db.listener.Listen(table.Name, table.Columns, table.BigColumns, table); err != nil {

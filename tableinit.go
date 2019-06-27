@@ -9,7 +9,8 @@ import (
 	"github.com/lovego/struct_tag"
 )
 
-func (t *Table) init(dbQuerier DBQuerier, logger Logger) error {
+func (t *Table) init(dbName string, dbQuerier DBQuerier, logger Logger) error {
+	t.dbName = dbName
 	if t.Name == "" {
 		return errors.New("Name should not be empty.")
 	}

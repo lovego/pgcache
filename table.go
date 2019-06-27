@@ -11,6 +11,8 @@ import (
 
 // A Handler to cache table data.
 type Table struct {
+	dbName string
+
 	// The name of the table to cache, required.
 	Name string
 
@@ -69,7 +71,7 @@ func (t *Table) ConnLoss(table string) {
 func (t *Table) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(t.rowStruct)).Elem()
 	if err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql); err != nil {
-		return err
+		return fmt.Errorf("reload %s.%s: %v", t.dbName, t.Name, err)
 	}
 	t.Clear()
 	t.Save(rows.Interface())
