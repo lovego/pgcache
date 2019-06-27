@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"runtime"
 	"time"
 
 	"github.com/lovego/errs"
@@ -12,7 +11,7 @@ import (
 	"github.com/lovego/pgcache/pglistener"
 )
 
-var dbUrl = getTestDataSource()
+var dbUrl = "postgres://postgres:@localhost/travis?sslmode=disable"
 var testDB = connectDB(dbUrl)
 var logger = loggerPkg.New(os.Stderr)
 
@@ -111,16 +110,6 @@ func createStudentsTable() {
     other text default ''
 	)`); err != nil {
 		panic(err)
-	}
-}
-
-func getTestDataSource() string {
-	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
-		return env
-	} else if runtime.GOOS == "darwin" {
-		return "postgres://postgres:@localhost/test?sslmode=disable"
-	} else {
-		return "postgres://travis:123456@localhost:5432/travis?sslmode=disable"
 	}
 }
 

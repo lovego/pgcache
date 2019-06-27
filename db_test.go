@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/lovego/pgcache"
 )
 
-var dbUrl = getTestDataSource()
+var dbUrl = "postgres://postgres:@localhost/travis?sslmode=disable"
 var testDB = connectDB(dbUrl)
 var logger = loggerPkg.New(os.Stderr)
 
@@ -202,16 +201,6 @@ func Example2() {
 	// map[1:{1 李雷 初三2班} 2:{2 韩梅梅 初三2班}]
 	// map[初三2班:[{1 李雷 初三2班} {2 韩梅梅 初三2班}]]
 	// [{1 李雷 初三2班} {2 韩梅梅 初三2班}]
-}
-
-func getTestDataSource() string {
-	if env := os.Getenv("PG_DATA_SOURCE"); env != "" {
-		return env
-	} else if runtime.GOOS == "darwin" {
-		return "postgres://postgres:@localhost/test?sslmode=disable"
-	} else {
-		return "postgres://travis:123456@localhost:5432/travis?sslmode=disable"
-	}
 }
 
 func connectDB(dbUrl string) *sql.DB {
