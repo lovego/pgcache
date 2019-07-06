@@ -7,6 +7,10 @@ import (
 )
 
 func List() []byte {
+	return []byte(listHtml(listHtmlTable()))
+}
+
+func listHtmlTable() string {
 	var dbs = make([]string, 0, len(cachesMap))
 	for db := range cachesMap {
 		dbs = append(dbs, db)
@@ -14,8 +18,7 @@ func List() []byte {
 	sort.Strings(dbs)
 
 	buf := bytes.NewBufferString(`
-<table style="width: 100%; border-collapse: collapse;">
-<style>td {padding: 5px 10px; border: 1px dashed gray; }</style>
+<table>
 <tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Size</th> <th>Operation</th> </tr>
 
 `)
@@ -27,7 +30,7 @@ func List() []byte {
 		))
 	}
 	buf.WriteString("</table>")
-	return buf.Bytes()
+	return buf.String()
 }
 
 func listDbTables(db string, tablesMap map[string]Cache) (string, int) {
@@ -83,7 +86,7 @@ func listData(db, table string, data Data) string {
 		return `<td></td> <td></td>`
 	}
 	return fmt.Sprintf(
-		`<td><a href="/caches/%s/%s/%s">%s</a></td> <td>%d</td>`,
+		`<td class="data"><a href="/caches/%s/%s/%s">%s</a></td> <td>%d</td>`,
 		db, table, data.Key(), data.Key(), data.Size(),
 	)
 }

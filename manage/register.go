@@ -9,7 +9,7 @@ type Cache interface {
 type Data interface {
 	Key() string
 	Size() int
-	Data() interface{}
+	Data(keys ...string) (interface{}, error)
 }
 
 var cachesMap = make(map[string]map[string]Cache)

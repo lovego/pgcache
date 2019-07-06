@@ -1,9 +1,11 @@
 package pgcache
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -178,8 +180,35 @@ func (d *Data) Size() int {
 	return d.dataV.Len()
 }
 
-func (d *Data) Data() interface{} {
-	return d.DataPtr
+func (d *Data) Data(keys ...string) (interface{}, error) {
+	if len(keys) == 0 {
+		return d.DataPtr, nil
+	}
+	var data = d.dataV
+	for _, str := range keys {
+		switch data.Kind() {
+		case reflect.Map:
+			if key, err := convertStrToType(str, data.Type().Key()); err != nil {
+				return nil, err
+			} else {
+				data = data.MapIndex(key)
+			}
+		case reflect.Slice, reflect.Array:
+			if index, err := strconv.Atoi(str); err != nil {
+				return nil, err
+			} else if index >= data.Len() {
+				return nil, fmt.Errorf("Index %d out of range: 0 ~ %d.", index, data.Len())
+			} else {
+				data = data.Index(index)
+			}
+		default:
+			return nil, fmt.Errorf("Not map/slice/array for key: ", str)
+		}
+	}
+	if !data.IsValid() {
+		return nil, errors.New("No such value found.")
+	}
+	return data.Interface(), nil
 }
 
 var mapKeyRegexp = regexp.MustCompile(`\[\w+\]`)
@@ -200,4 +229,25 @@ func addKeyValueNames(mapType string, keyNames []string, valueName string) strin
 		}
 	}
 	return mapType
+}
+
+func convertStrToType(str string, typ reflect.Type) (reflect.Value, error) {
+	var value interface{}
+	var err error
+	switch typ.Kind() {
+	case reflect.String:
+		value = str
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value, err = strconv.ParseInt(str, 10, 64)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		value, err = strconv.ParseUint(str, 10, 64)
+	case reflect.Bool:
+		value, err = strconv.ParseBool(str)
+	default:
+		return reflect.Value{}, fmt.Errorf("don't know how to convert string to %v", typ)
+	}
+	if err != nil {
+		return reflect.Value{}, err
+	}
+	return reflect.ValueOf(value).Convert(typ), nil
 }

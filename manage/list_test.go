@@ -27,11 +27,11 @@ func (t testData) Key() string {
 func (t testData) Size() int {
 	return t.size
 }
-func (t testData) Data() interface{} {
+func (t testData) Data(...string) interface{} {
 	return t.data
 }
 
-func ExampleList() {
+func ExampleListHtmlTable() {
 	var table1 testCache1
 	var table2, table3 testCache2
 
@@ -57,26 +57,25 @@ func ExampleList() {
 	if err := Register(`db2`, `table3`, table3); err != nil {
 		panic(err)
 	}
-	fmt.Println(string(List()))
+	fmt.Println(listHtmlTable())
 	// Output:
-	// <table style="width: 100%; border-collapse: collapse;">
-	// <style>td {padding: 5px 10px; border: 1px dashed gray; }</style>
+	// <table>
 	// <tr> <th>Database</th> <th>Table</th> <th>Data</th> <th>Size</th> <th>Operation</th> </tr>
 	//
 	// <tr> <td rowspan="2">db1</td> <td rowspan="2">table1</td>
-	// <td><a href="/caches/db1/table1/key1.1">key1.1</a></td> <td>1</td>
+	// <td class="data"><a href="/caches/db1/table1/key1.1">key1.1</a></td> <td>1</td>
 	// <td rowspan="2"></td>
 	// </tr>
-	// <tr> <td><a href="/caches/db1/table1/key1.2">key1.2</a></td> <td>5</td> </tr>
+	// <tr> <td class="data"><a href="/caches/db1/table1/key1.2">key1.2</a></td> <td>5</td> </tr>
 	//
 	// <tr> <td rowspan="4">db2</td> <td rowspan="3">table2</td>
-	// <td><a href="/caches/db2/table2/key2.1">key2.1</a></td> <td>4</td>
+	// <td class="data"><a href="/caches/db2/table2/key2.1">key2.1</a></td> <td>4</td>
 	// <td rowspan="3"><a href="/caches/db2/table2/reload">reload</a></td>
 	// </tr>
-	// <tr> <td><a href="/caches/db2/table2/key2.2">key2.2</a></td> <td>9</td> </tr>
-	// <tr> <td><a href="/caches/db2/table2/key2.3">key2.3</a></td> <td>0</td> </tr>
+	// <tr> <td class="data"><a href="/caches/db2/table2/key2.2">key2.2</a></td> <td>9</td> </tr>
+	// <tr> <td class="data"><a href="/caches/db2/table2/key2.3">key2.3</a></td> <td>0</td> </tr>
 	// <tr> <td>table3</td>
-	// <td><a href="/caches/db2/table3/key3.1">key3.1</a></td> <td>3</td>
+	// <td class="data"><a href="/caches/db2/table3/key3.1">key3.1</a></td> <td>3</td>
 	// <td><a href="/caches/db2/table3/reload">reload</a></td>
 	// </tr>
 	//

@@ -2,6 +2,7 @@ package manage
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lovego/goa"
 )
@@ -12,7 +13,9 @@ func Routes(router *goa.Router) {
 	})
 
 	router.GetX(`/caches/([^/]+)/([^/]+)/([^/]+)`, func(c *goa.Context) {
-		if data, err := Detail(c.Param(0), c.Param(1), c.Param(2)); err == nil {
+		if data, err := Detail(
+			c.Param(0), c.Param(1), c.Param(2), c.URL.Query().Get("keys"),
+		); err == nil {
 			c.Json(data)
 		} else {
 			c.Write([]byte(err.Error()))
@@ -28,12 +31,20 @@ func Routes(router *goa.Router) {
 	})
 }
 
-func Detail(database, table, key string) (interface{}, error) {
+func Detail(database, table, key, dataKeysStr string) (interface{}, error) {
 	data := getData(database, table, key)
 	if data == nil {
 		return nil, fmt.Errorf("data %s.%s %s does not exists.", database, table, key)
 	}
-	return data.Data(), nil
+	dataKeysStr = strings.TrimSpace(dataKeysStr)
+	var dataKeys []string
+	if dataKeysStr != "" {
+		dataKeys = strings.Split(dataKeysStr, ",")
+		for i := range dataKeys {
+			dataKeys[i] = strings.TrimSpace(dataKeys[i])
+		}
+	}
+	return data.Data(dataKeys...)
 }
 
 func Reload(database, table string) error {
