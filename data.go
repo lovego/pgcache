@@ -1,6 +1,7 @@
 package pgcache
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -166,6 +167,9 @@ func (d *Data) precond(row reflect.Value) bool {
 func (d *Data) Key() string {
 	if d.manageKey == `` {
 		d.manageKey = addKeyValueNames(d.dataV.Type().String(), d.MapKeys, d.Value)
+		if d.Precond != "" {
+			d.manageKey += fmt.Sprintf("(%s)", d.Precond)
+		}
 	}
 	return d.manageKey
 }
