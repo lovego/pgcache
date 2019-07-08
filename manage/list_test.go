@@ -27,8 +27,8 @@ func (t testData) Key() string {
 func (t testData) Size() int {
 	return t.size
 }
-func (t testData) Data(...string) interface{} {
-	return t.data
+func (t testData) Data(...string) (interface{}, error) {
+	return t.data, nil
 }
 
 func ExampleListHtmlTable() {
