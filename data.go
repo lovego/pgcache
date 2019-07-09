@@ -202,7 +202,7 @@ func (d *Data) Data(keys ...string) (interface{}, error) {
 				data = data.Index(index)
 			}
 		default:
-			return nil, fmt.Errorf("Not map/slice/array for key: ", str)
+			return nil, fmt.Errorf("Not map/slice/array for key: %s", str)
 		}
 	}
 	if !data.IsValid() {
