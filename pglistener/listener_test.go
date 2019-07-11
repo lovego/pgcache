@@ -18,8 +18,8 @@ var logger = loggerPkg.New(os.Stderr)
 type testHandler struct {
 }
 
-func (h testHandler) ConnLoss(table string) {
-	fmt.Printf("ConnLoss %s\n", table)
+func (h testHandler) Init(table string) {
+	fmt.Printf("Init %s\n", table)
 }
 
 func (h testHandler) Create(table string, newBuf []byte) {
@@ -34,12 +34,16 @@ func (h testHandler) Delete(table string, oldBuf []byte) {
 	fmt.Printf("Delete %s\n  %s\n", table, oldBuf)
 }
 
+func (h testHandler) ConnLoss(table string) {
+	fmt.Printf("ConnLoss %s\n", table)
+}
+
 func ExampleListener_Listen() {
 	testCreateUpdateDelete("students")
 	testCreateUpdateDelete("public.students")
 
 	// Output:
-	// ConnLoss public.students
+	// Init public.students
 	// Create public.students
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	// Update public.students
@@ -47,7 +51,7 @@ func ExampleListener_Listen() {
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 	// Delete public.students
 	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// ConnLoss public.students
+	// Init public.students
 	// Create public.students
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	// Update public.students

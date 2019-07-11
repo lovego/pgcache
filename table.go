@@ -3,7 +3,9 @@ package pgcache
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"reflect"
+	"time"
 
 	"github.com/lovego/bsql"
 	"github.com/lovego/pgcache/manage"
@@ -49,6 +51,12 @@ type Table struct {
 	rowStruct reflect.Type
 }
 
+func (t *Table) Init(table string) {
+	if err := t.Reload(); err != nil {
+		t.logger.Error(err)
+	}
+}
+
 func (t *Table) Create(table string, content []byte) {
 	t.save(content)
 }
@@ -64,17 +72,24 @@ func (t *Table) Delete(table string, content []byte) {
 
 func (t *Table) ConnLoss(table string) {
 	if err := t.Reload(); err != nil {
-		t.logger.Error(err)
+		t.logger.Errorf("pgcache connection loss: %s", err.Error())
+	} else {
+		t.logger.Errorf("pgcache connection loss: %s.%s", t.dbName, t.Name)
 	}
 }
 
 func (t *Table) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(t.rowStruct)).Elem()
-	if err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql); err != nil {
-		return fmt.Errorf("reload %s.%s: %v", t.dbName, t.Name, err)
+	start := time.Now()
+	err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql)
+	msg := fmt.Sprintf("pgcache reload %s.%s queryTime: %v", t.dbName, t.Name, time.Since(start))
+	if err != nil {
+		log.Println(msg)
+		return fmt.Errorf("pgcache reload %s.%s: %v", t.dbName, t.Name, err)
 	}
 	t.Clear()
 	t.Save(rows.Interface())
+	log.Printf("%s fullTime: %v\n", msg, time.Since(start))
 	return nil
 }
 

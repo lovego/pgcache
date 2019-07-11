@@ -26,6 +26,7 @@ type Listener struct {
 }
 
 type Handler interface {
+	Init(table string)
 	Create(table string, content []byte)
 	Update(table string, oldContent, newContent []byte)
 	Delete(table string, content []byte)
@@ -81,7 +82,7 @@ func (l *Listener) Listen(table string, columns, checkColumns string, handler Ha
 	if err := l.listener.Listen(l.GetChannel(table)); err != nil {
 		return errs.Trace(err)
 	}
-	l.listener.Notify <- &pq.Notification{Channel: l.GetChannel(table), Extra: "reload"}
+	l.listener.Notify <- &pq.Notification{Channel: l.GetChannel(table), Extra: "init"}
 	<-l.inited[table]
 	return nil
 }
@@ -127,8 +128,8 @@ func (l *Listener) handle(notice *pq.Notification) {
 	if handler == nil {
 		l.logger.Errorf("unexpected Notification: %+v", notice)
 	}
-	if notice.Extra == "reload" {
-		handler.ConnLoss(table)
+	if notice.Extra == "init" {
+		handler.Init(table)
 		l.inited[table] <- struct{}{}
 		close(l.inited[table])
 		return

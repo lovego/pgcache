@@ -40,9 +40,9 @@ func ExampleTable() {
 			{RWMutex: &mutex, DataPtr: &m2, MapKeys: []string{"Subject", "StudentId"}, Value: "Score"},
 		},
 	}
-	t.init("", testQuerier{}, testLogger)
+	t.init("db", testQuerier{}, testLogger)
 
-	t.ConnLoss("")
+	t.Init("")
 	maps.Println(m1, m2)
 
 	t.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
