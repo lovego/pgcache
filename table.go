@@ -82,14 +82,15 @@ func (t *Table) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(t.rowStruct)).Elem()
 	start := time.Now()
 	err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql)
-	msg := fmt.Sprintf("pgcache reload %s.%s queryTime: %v", t.dbName, t.Name, time.Since(start))
+	msg := fmt.Sprintf("pgcache reload queryTime: %6v, ", time.Since(start).Round(time.Millisecond))
 	if err != nil {
-		log.Println(msg)
+		log.Printf("%s \t%s.%s\n", msg, t.dbName, t.Name)
 		return fmt.Errorf("pgcache reload %s.%s: %v", t.dbName, t.Name, err)
 	}
 	t.Clear()
 	t.Save(rows.Interface())
-	log.Printf("%s fullTime: %v\n", msg, time.Since(start))
+	log.Printf("%s fullTime: %6v, \t%s.%s\n", msg, time.Since(start).Round(time.Millisecond),
+		t.dbName, t.Name)
 	return nil
 }
 
