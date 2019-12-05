@@ -56,7 +56,11 @@ func createPGFunction(db *sql.DB) error {
 }
 
 func createTrigger(db *sql.DB, table string, columns, checkColumns string) error {
-	dropExistingTrigger(db, table)
+	if ok, err := hasExistingTrigger(db, table); err != nil {
+		return err
+	} else if ok {
+		return nil
+	}
 
 	columns = dollarPrefix(columns)
 	if checkColumns != "" {
@@ -73,6 +77,21 @@ func createTrigger(db *sql.DB, table string, columns, checkColumns string) error
 		return errs.Trace(err)
 	}
 	return nil
+}
+
+func hasExistingTrigger(db *sql.DB, table string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	row := db.QueryRowContext(ctx, fmt.Sprintf(`SELECT count(*) AS count FROM pg_trigger
+WHERE NOT tgisinternal AND tgname = 'pgnotify' AND tgrelid='%s'::regclass
+`, table))
+	var count int
+	if err := row.Scan(&count); err != nil {
+		return false, errs.Trace(err)
+	}
+
+	return count > 0, nil
 }
 
 func dropExistingTrigger(db *sql.DB, table string) error {
