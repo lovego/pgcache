@@ -14,6 +14,7 @@ install:
 script:
   - |
     if [[ $(go version) == *1.11* ]]; then
+      set -e
       go test -v -p 1 -covermode=count -coverprofile=coverage.out ./...
       go get github.com/mattn/goveralls
       $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci

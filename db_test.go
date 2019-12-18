@@ -82,6 +82,7 @@ func Example() {
 
 func initStudentsTable() {
 	if _, err := testDB.Exec(`
+SET TIME ZONE 'PRC';
 DROP TABLE IF EXISTS students;
 CREATE TABLE IF NOT EXISTS students (
   id    bigserial,
