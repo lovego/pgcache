@@ -21,7 +21,7 @@ type Student struct {
 	Id        int64
 	Name      string
 	Class     string
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt time.Time
 }
 
 func (s Student) String() string {

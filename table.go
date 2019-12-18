@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lovego/bsql"
+	"github.com/lovego/bsql/scan"
 	"github.com/lovego/pgcache/manage"
 )
 
@@ -130,7 +131,7 @@ func (t *Table) GetDatas() []manage.Data {
 
 func (t *Table) save(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
-	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
+	if err := jsonUnmarshal(content, row); err != nil {
 		t.Error(err)
 		return
 	}
@@ -153,7 +154,7 @@ func (t *Table) save(content []byte) {
 
 func (t *Table) remove(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
-	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
+	if err := jsonUnmarshal(content, row); err != nil {
 		t.Error(err)
 		return
 	}
@@ -164,4 +165,22 @@ func (t *Table) remove(content []byte) {
 
 func (t *Table) Error(err interface{}) {
 	t.logger.Errorf("pgcache (%s.%s) %v", t.dbName, t.Name, err)
+}
+
+func jsonUnmarshal(content []byte, row reflect.Value) error {
+	var m = map[string]json.RawMessage{}
+
+	if err := json.Unmarshal(content, &m); err != nil {
+		return err
+	}
+
+	for k, v := range m {
+		if field := row.FieldByName(scan.Column2Field(k)); field.IsValid() {
+			if err := json.Unmarshal(v, field.Addr().Interface()); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
