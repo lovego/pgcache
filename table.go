@@ -53,7 +53,7 @@ type Table struct {
 
 func (t *Table) Init(table string) {
 	if err := t.Reload(); err != nil {
-		t.logger.Error(err)
+		t.Error(err)
 	}
 }
 
@@ -72,9 +72,9 @@ func (t *Table) Delete(table string, content []byte) {
 
 func (t *Table) ConnLoss(table string) {
 	if err := t.Reload(); err != nil {
-		t.logger.Errorf("pgcache connection loss: %s", err.Error())
+		t.Error("connection loss: " + err.Error())
 	} else {
-		t.logger.Errorf("pgcache connection loss: %s.%s", t.dbName, t.Name)
+		t.Error("connection loss")
 	}
 }
 
@@ -85,7 +85,7 @@ func (t *Table) Reload() error {
 	msg := fmt.Sprintf("pgcache reload queryTime: %6v, ", time.Since(start).Round(time.Millisecond))
 	if err != nil {
 		log.Printf("%s \t%s.%s\n", msg, t.dbName, t.Name)
-		return fmt.Errorf("pgcache reload %s.%s: %v", t.dbName, t.Name, err)
+		return fmt.Errorf("reload: %v", err)
 	}
 	t.Clear()
 	t.Save(rows.Interface())
@@ -131,7 +131,7 @@ func (t *Table) GetDatas() []manage.Data {
 func (t *Table) save(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
 	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
-		t.logger.Error(err)
+		t.Error(err)
 		return
 	}
 	if t.BigColumns != "" {
@@ -142,7 +142,7 @@ func (t *Table) save(content []byte) {
 		if err := t.dbQuerier.Query(row.Addr().Interface(), fmt.Sprintf(
 			t.bigColumnsLoadSql, params...,
 		)); err != nil {
-			t.logger.Error(err)
+			t.Error(err)
 			return
 		}
 	}
@@ -154,10 +154,14 @@ func (t *Table) save(content []byte) {
 func (t *Table) remove(content []byte) {
 	var row = reflect.New(t.rowStruct).Elem()
 	if err := json.Unmarshal(content, row.Addr().Interface()); err != nil {
-		t.logger.Error(err)
+		t.Error(err)
 		return
 	}
 	for _, d := range t.Datas {
 		d.remove(row)
 	}
+}
+
+func (t *Table) Error(err interface{}) {
+	t.logger.Errorf("pgcache (%s.%s) %v", t.dbName, t.Name, err)
 }
