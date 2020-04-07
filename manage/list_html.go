@@ -1,8 +1,8 @@
 // vim: set ft=html:
 package manage
 
-func listHtml(table string) string {
-return `
+func listHtml(hostName, table string) string {
+	return `
 <!doctype html>
 <html>
   <head>
@@ -16,6 +16,7 @@ input:focus { outline-width: 0; }
     </style>
   </head>
   <body>
+    <p>` + hostName + `</p>
     <p>To see a spefic value in data, click at blank area after data link to show input box(click again to hide it).
     Input map keys or slice indexes seperated by "," and press ENTER.
     </p>

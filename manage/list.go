@@ -3,11 +3,13 @@ package manage
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"sort"
 )
 
 func List() []byte {
-	return []byte(listHtml(listHtmlTable()))
+	hostName, _ := os.Hostname()
+	return []byte(listHtml(hostName, listHtmlTable()))
 }
 
 func listHtmlTable() string {
