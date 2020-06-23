@@ -12,7 +12,7 @@ func Routes(router *goa.Router) {
 		c.Write(List())
 	})
 
-	router.GetX(`/caches/([^/]+)/([^/]+)/([^/]+)`, func(c *goa.Context) {
+	router.Get(`/caches/([^/]+)/([^/]+)/([^/]+)`, func(c *goa.Context) {
 		if data, err := Detail(
 			c.Param(0), c.Param(1), c.Param(2), c.URL.Query().Get("keys"),
 		); err == nil {
@@ -22,7 +22,7 @@ func Routes(router *goa.Router) {
 		}
 	})
 
-	router.GetX(`/caches/([^/]+)/([^/]+)/reload`, func(c *goa.Context) {
+	router.Get(`/caches/([^/]+)/([^/]+)/reload`, func(c *goa.Context) {
 		if err := Reload(c.Param(0), c.Param(1)); err == nil {
 			c.Ok("reload success.")
 		} else {
