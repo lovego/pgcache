@@ -86,7 +86,7 @@ func columnsFromRowStruct(rowStruct reflect.Type, exclude string) string {
 	}
 
 	var result []string
-	structs.TraverseExportedFields(rowStruct, func(field reflect.StructField) {
+	structs.TraverseType(rowStruct, func(field reflect.StructField) {
 		if value, ok := struct_tag.Lookup(string(field.Tag), `json`); !ok || value != "-" {
 			column := Field2Column(field.Name)
 			if len(excluding) == 0 || notIn(column, excluding) {
