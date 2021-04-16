@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/lovego/struct_tag"
+	"github.com/lovego/structs"
 )
 
 func (t *Table) init(dbName string, dbQuerier DBQuerier, logger Logger) error {
@@ -85,32 +86,15 @@ func columnsFromRowStruct(rowStruct reflect.Type, exclude string) string {
 	}
 
 	var result []string
-	traverseStructFields(rowStruct, func(field reflect.StructField) {
-		column := Field2Column(field.Name)
-		if len(excluding) == 0 || notIn(column, excluding) {
-			result = append(result, column)
+	structs.TraverseType(rowStruct, func(field reflect.StructField) {
+		if value, ok := struct_tag.Lookup(string(field.Tag), `json`); !ok || value != "-" {
+			column := Field2Column(field.Name)
+			if len(excluding) == 0 || notIn(column, excluding) {
+				result = append(result, column)
+			}
 		}
 	})
 	return strings.Join(result, ",")
-}
-
-func traverseStructFields(typ reflect.Type, fn func(field reflect.StructField)) bool {
-	if typ.Kind() == reflect.Ptr {
-		typ = typ.Elem()
-	}
-	if typ.Kind() != reflect.Struct {
-		return false
-	}
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		if (!field.Anonymous || !traverseStructFields(field.Type, fn)) &&
-			(field.Name[0] >= 'A' && field.Name[0] <= 'Z') {
-			if value, ok := struct_tag.Lookup(string(field.Tag), `json`); !ok || value != "-" {
-				fn(field)
-			}
-		}
-	}
-	return true
 }
 
 /* 单词边界有两种

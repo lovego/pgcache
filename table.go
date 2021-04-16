@@ -31,6 +31,7 @@ type Table struct {
 	Columns string
 
 	// The big columns of the table to cache. It's got by a seperate query.
+	// Warning: when update, it will not be set on the old value.
 	BigColumns string
 	// The unique fields to load "BigColumns" from db. If empty, and "RowStruct" has a "Id" Field,
 	// it's used as "BigColumnsLoadKeys".
