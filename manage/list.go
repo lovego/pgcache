@@ -62,7 +62,7 @@ func listDbTable(buf *bytes.Buffer, db, table string, cache Cache) int {
 
 	var reload string
 	if _, ok := cache.(interface {
-		Reload() error
+		Reload(bool) error
 	}); ok {
 		reload = fmt.Sprintf(`<a href="/caches/%s/%s/reload">reload</a>`, db, table)
 	}
