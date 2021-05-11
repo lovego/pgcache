@@ -17,7 +17,7 @@ type testData struct {
 func (t testCache1) GetDatas() []Data {
 	return t.datas
 }
-func (t testCache2) Reload() error {
+func (t testCache2) Reload(noClear bool) error {
 	return nil
 }
 

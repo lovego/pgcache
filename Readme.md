@@ -1,5 +1,6 @@
 # pgcache
-- cache Postgresql table's data in memory and keep the cache up to date.
+Cache PostgreSQL table's data in memory and keep the cached data up to date automatically,
+by PostgreSQL's trigger and LISTEN/NOTIFY mechanisem.
 
 [![Build Status](https://travis-ci.org/lovego/pgcache.svg?branch=master)](https://travis-ci.org/lovego/pgcache)
 [![Coverage Status](https://img.shields.io/coveralls/github/lovego/pgcache/master.svg)](https://coveralls.io/github/lovego/pgcache?branch=master)
