@@ -2,10 +2,10 @@
 Cache PostgreSQL table's data in memory and keep the cached data up to date automatically,
 by PostgreSQL's trigger and LISTEN/NOTIFY mechanisem.
 
-[![Build Status](https://travis-ci.org/lovego/pgcache.svg?branch=master)](https://travis-ci.org/lovego/pgcache)
-[![Coverage Status](https://img.shields.io/coveralls/github/lovego/pgcache/master.svg)](https://coveralls.io/github/lovego/pgcache?branch=master)
+[![Build Status](https://github.com/lovego/pgcache/actions/workflows/go.yml/badge.svg)](https://github.com/lovego/pgcache/actions/workflows/go.yml)
+[![Coverage Status](https://coveralls.io/repos/github/lovego/pgcache/badge.svg?branch=master)](https://coveralls.io/github/lovego/pgcache)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lovego/pgcache)](https://goreportcard.com/report/github.com/lovego/pgcache)
-[![GoDoc](https://godoc.org/github.com/lovego/pgcache?status.svg)](https://godoc.org/github.com/lovego/pgcache)
+[![Documentation](https://pkg.go.dev/badge/github.com/lovego/pgcache)](https://pkg.go.dev/github.com/lovego/pgcache@v0.0.1)
 
 ## Install
 `$ go get github.com/lovego/pgcache`

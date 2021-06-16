@@ -7,7 +7,7 @@ import (
 	"github.com/lovego/goa"
 )
 
-func Routes(router *goa.Router) {
+func Routes(router *goa.RouterGroup) {
 	router.Get(`/caches`, func(c *goa.Context) {
 		c.Write(List())
 	})

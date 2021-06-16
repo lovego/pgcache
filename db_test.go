@@ -13,7 +13,7 @@ import (
 	"github.com/lovego/pgcache"
 )
 
-var dbUrl = "postgres://postgres:@localhost/travis?sslmode=disable"
+var dbUrl = "postgres://postgres:postgres@localhost/postgres?sslmode=disable"
 var testDB = connectDB(dbUrl)
 var logger = loggerPkg.New(os.Stderr)
 
