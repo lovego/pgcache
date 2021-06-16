@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/lovego/logger"
-	"github.com/lovego/maps"
 )
 
 var testLogger = logger.New(os.Stdout)
@@ -43,27 +42,27 @@ func ExampleTable() {
 	t.init("db", testQuerier{}, testLogger)
 
 	t.Init("")
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	t.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	t.Update("",
 		[]byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`),
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	t.Delete("",
 		[]byte(`{"StudentId": 1001, "Subject": "数学", "Score": 96}`),
 	)
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	t.Clear()
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	t.Create("", []byte(`{"StudentId": 1001, "Subject": "语文", "Score": 95}`))
-	maps.Println(m1, m2)
+	fmt.Println(m1, m2)
 
 	// Output:
 	// map[1000:map[语文:90]] map[语文:map[1000:90]]

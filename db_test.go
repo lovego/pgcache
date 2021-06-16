@@ -9,7 +9,6 @@ import (
 
 	"github.com/lovego/bsql"
 	loggerPkg "github.com/lovego/logger"
-	"github.com/lovego/maps"
 	"github.com/lovego/pgcache"
 )
 
@@ -58,8 +57,8 @@ func Example() {
 
 	// from now on, studentsMap and classesMap is always synchronized with students table.
 	fmt.Println(`init:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 
 	// even you insert some rows.
 	testInsert(studentsMap, classesMap)
@@ -115,8 +114,8 @@ VALUES
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after INSERT:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) {
@@ -127,8 +126,8 @@ func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) 
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after UPDATE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) {
@@ -137,8 +136,8 @@ func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) 
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after DELETE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func Example2() {
@@ -176,19 +175,19 @@ func Example2() {
 
 	// from now on, studentsMap and classesMap is always synchronized with students table.
 	fmt.Println(`init:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
-	maps.Println(studentsSlice)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
+	fmt.Println(studentsSlice)
 
 	// even you insert some rows.
 	testInsert(studentsMap, classesMap)
-	maps.Println(studentsSlice)
+	fmt.Println(studentsSlice)
 	// even you update some rows.
 	testUpdate(studentsMap, classesMap)
-	maps.Println(studentsSlice)
+	fmt.Println(studentsSlice)
 	// even you delete some rows.
 	testDelete(studentsMap, classesMap)
-	maps.Println(studentsSlice)
+	fmt.Println(studentsSlice)
 
 	dbCache.RemoveAll()
 

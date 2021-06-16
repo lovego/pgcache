@@ -24,7 +24,6 @@ import (
 
 	"github.com/lovego/bsql"
 	loggerPkg "github.com/lovego/logger"
-	"github.com/lovego/maps"
 	"github.com/lovego/pgcache"
 )
 
@@ -67,8 +66,8 @@ func Example() {
 
 	// from now on, studentsMap and classesMap is always synchronized with students table.
 	fmt.Println(`init:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 
 	// even you insert some rows.
 	testInsert(studentsMap, classesMap)
@@ -122,8 +121,8 @@ VALUES
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after INSERT:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) {
@@ -132,8 +131,8 @@ func testUpdate(studentsMap map[int64]Student, classesMap map[string][]Student) 
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after UPDATE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) {
@@ -142,8 +141,8 @@ func testDelete(studentsMap map[int64]Student, classesMap map[string][]Student) 
 	}
 	time.Sleep(10 * time.Millisecond)
 	fmt.Println(`after DELETE:`)
-	maps.Println(studentsMap)
-	maps.Println(classesMap)
+	fmt.Println(studentsMap)
+	fmt.Println(classesMap)
 }
 
 func connectDB(dbUrl string) *sql.DB {
@@ -154,10 +153,4 @@ func connectDB(dbUrl string) *sql.DB {
 	return db
 }
 ```
-
-## Docs
-[https://godoc.org/github.com/lovego/pgcache](https://godoc.org/github.com/lovego/pgcache)
-
-## Test
-`PG_DATA_SOURCE="postgres://user:password@host:port/db?sslmode=disable" go test`
 

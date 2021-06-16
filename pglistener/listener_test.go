@@ -11,7 +11,7 @@ import (
 	"github.com/lovego/pgcache/pglistener"
 )
 
-var dbUrl = "postgres://postgres:@localhost/travis?sslmode=disable"
+var dbUrl = "postgres://postgres:postgres@localhost/postgres?sslmode=disable"
 var testDB = connectDB(dbUrl)
 var logger = loggerPkg.New(os.Stderr)
 
@@ -39,25 +39,25 @@ func (h testHandler) ConnLoss(table string) {
 }
 
 func ExampleListener_Listen() {
-	testCreateUpdateDelete("students")
-	testCreateUpdateDelete("public.students")
+	testCreateUpdateDelete("students2")
+	testCreateUpdateDelete("public.students2")
 
 	// Output:
-	// Init public.students
-	// Create public.students
+	// Init public.students2
+	// Create public.students2
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
-	// Update public.students
+	// Update public.students2
 	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// Delete public.students
+	// Delete public.students2
 	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// Init public.students
-	// Create public.students
+	// Init public.students2
+	// Create public.students2
 	//   {"id": 1, "name": "李雷", "time": "2018-09-08"}
-	// Update public.students
+	// Update public.students2
 	//   old: {"id": 1, "name": "李雷", "time": "2018-09-08"}
 	//   new: {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
-	// Delete public.students
+	// Delete public.students2
 	//   {"id": 1, "name": "韩梅梅", "time": "2018-09-09"}
 }
 
@@ -79,22 +79,22 @@ func testCreateUpdateDelete(table string) {
 
 	// from now on, testHandler will be notified on INSERT / UPDATE / DELETE.
 	if _, err := testDB.Exec(`
-    INSERT INTO students(name, time) VALUES ('李雷', '2018-09-08 15:55:00+08')
+    INSERT INTO students2(name, time) VALUES ('李雷', '2018-09-08 15:55:00+08')
   `); err != nil {
 		panic(err)
 	}
 	if _, err = testDB.Exec(`
-    UPDATE students SET name = '韩梅梅', time = '2018-09-09 15:56:00+08'
+    UPDATE students2 SET name = '韩梅梅', time = '2018-09-09 15:56:00+08'
   `); err != nil {
 		panic(err)
 	}
 	// this one should not be notified
 	if _, err = testDB.Exec(`
-    UPDATE students SET time = '2018-09-09 15:57:00+08'
+    UPDATE students2 SET time = '2018-09-09 15:57:00+08'
   `); err != nil {
 		panic(err)
 	}
-	if _, err = testDB.Exec(`DELETE FROM students`); err != nil {
+	if _, err = testDB.Exec(`DELETE FROM students2`); err != nil {
 		panic(err)
 	}
 
@@ -106,8 +106,8 @@ func testCreateUpdateDelete(table string) {
 
 func createStudentsTable() {
 	if _, err := testDB.Exec(`
-	DROP TABLE IF EXISTS students;
-	CREATE TABLE IF NOT EXISTS students (
+	DROP TABLE IF EXISTS students2;
+	CREATE TABLE IF NOT EXISTS students2 (
 		id   bigserial,
 		name varchar(100),
 		time timestamptz,

@@ -8,7 +8,6 @@ require (
 	github.com/lovego/errs v0.0.2
 	github.com/lovego/goa v0.0.7
 	github.com/lovego/logger v0.0.1
-	github.com/lovego/maps v0.0.0-20190404131308-5c14106deb1f
 	github.com/lovego/slice v0.0.2 // indirect
 	github.com/lovego/sorted_sets v0.0.0-20190427104240-45a3bc2c9670
 	github.com/lovego/struct_tag v0.0.3

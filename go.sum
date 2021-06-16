@@ -26,7 +26,6 @@ github.com/lovego/jsondoc v0.0.0-20210513062349-dc84f0529696/go.mod h1:pJ1gUCK3V
 github.com/lovego/logger v0.0.0-20200804041111-ab21de5d5a74/go.mod h1:uAHp76Nknc9tJbA2XKYQCUYqQR82udPAItcs/BtQDn4=
 github.com/lovego/logger v0.0.1 h1:Sr4eR74YFgrUtoMvWV2Jn64pi9YfcjGC6a6uXv91Qkk=
 github.com/lovego/logger v0.0.1/go.mod h1:4sDufT6c2yWdlUEIeiS1ivN8pIfVARiLRoqW4/TuPUg=
-github.com/lovego/maps v0.0.0-20190404131308-5c14106deb1f h1:ddyIZqaD9In5hDtB5eDgUr04JjBp0cpN3XPzS22kREc=
 github.com/lovego/maps v0.0.0-20190404131308-5c14106deb1f/go.mod h1:7hsF4cgdpLGo+c6/0bQAKi14FnRIqmFu2bfAHKdQuG8=
 github.com/lovego/regex_tree v0.0.0-20201024082014-ed2a66f4b888 h1:K53qtMNgslDpOiVU/dM+0SgxOQhCNerHSYtiVM6xrjs=
 github.com/lovego/regex_tree v0.0.0-20201024082014-ed2a66f4b888/go.mod h1:EyRae8Bzxiu365gWzB4xDtYF+72btiDP1LfXhTibiSM=

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-
-	"github.com/lovego/maps"
 )
 
 type Score struct {
@@ -77,7 +75,7 @@ func ExampleData_save_remove_clear() {
 	for i := 0; i < rows.Len(); i++ {
 		d.save(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	rows = reflect.ValueOf([]Score{
 		{StudentId: 1002, Score: 100},
@@ -86,10 +84,10 @@ func ExampleData_save_remove_clear() {
 	for i := 0; i < rows.Len(); i++ {
 		d.remove(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	d.clear()
-	maps.Println(m)
+	fmt.Println(m)
 
 	// Output:
 	// map[1001:98 1002:100 1003:99]
@@ -118,7 +116,7 @@ func ExampleData_save_remove_clear_sorted_sets() {
 	for i := 0; i < rows.Len(); i++ {
 		d.save(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	rows = reflect.ValueOf([]Score{
 		{StudentId: 1002, Score: 90},
@@ -129,10 +127,10 @@ func ExampleData_save_remove_clear_sorted_sets() {
 	for i := 0; i < rows.Len(); i++ {
 		d.remove(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	d.clear()
-	maps.Println(m)
+	fmt.Println(m)
 
 	// Output:
 	// map[1001:[98 99] 1002:[90 91] 1003:[99 100]]
@@ -159,7 +157,7 @@ func ExampleData_save_remove_clear_sorted_sets_2() {
 	for i := 0; i < rows.Len(); i++ {
 		d.save(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	rows = reflect.ValueOf([]Score{
 		{StudentId: 1001, Subject: "语文", Score: 90},
@@ -170,10 +168,10 @@ func ExampleData_save_remove_clear_sorted_sets_2() {
 	for i := 0; i < rows.Len(); i++ {
 		d.remove(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	d.clear()
-	maps.Println(m)
+	fmt.Println(m)
 
 	// Output:
 	// map[1001:[{1001 语文 99}] 1002:[{1002 数学 91}] 1003:[{1003 数学 100} {1003 语文 99}]]
@@ -200,7 +198,7 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	for i := 0; i < rows.Len(); i++ {
 		d.save(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	rows = reflect.ValueOf([]Score{
 		{StudentId: 1002, Subject: "数学", Score: 90},
@@ -210,7 +208,7 @@ func ExampleData_save_remove_clear_sorted_sets_3() {
 	for i := 0; i < rows.Len(); i++ {
 		d.remove(rows.Index(i))
 	}
-	maps.Println(m)
+	fmt.Println(m)
 
 	m = make(map[int]map[string][]int)
 	fmt.Println(d.dataV)
