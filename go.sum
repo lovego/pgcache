@@ -29,10 +29,10 @@ github.com/lovego/logger v0.0.1/go.mod h1:4sDufT6c2yWdlUEIeiS1ivN8pIfVARiLRoqW4/
 github.com/lovego/maps v0.0.0-20190404131308-5c14106deb1f/go.mod h1:7hsF4cgdpLGo+c6/0bQAKi14FnRIqmFu2bfAHKdQuG8=
 github.com/lovego/regex_tree v0.0.0-20201024082014-ed2a66f4b888 h1:K53qtMNgslDpOiVU/dM+0SgxOQhCNerHSYtiVM6xrjs=
 github.com/lovego/regex_tree v0.0.0-20201024082014-ed2a66f4b888/go.mod h1:EyRae8Bzxiu365gWzB4xDtYF+72btiDP1LfXhTibiSM=
-github.com/lovego/slice v0.0.2 h1:08le4yhNBbNsNz2lREzHfm3nUmgzno+69dcf7EMsY7E=
-github.com/lovego/slice v0.0.2/go.mod h1:C4ahk1h65jGU4T1V6Tg4VBQUx0ORnHuc2owWwr62cNg=
-github.com/lovego/sorted_sets v0.0.0-20190427104240-45a3bc2c9670 h1:xc2fhG68Ggo6YmdYHAGsf6z4eO2JpAimVBFMATwzIx8=
-github.com/lovego/sorted_sets v0.0.0-20190427104240-45a3bc2c9670/go.mod h1:J6sjYNjxXryoAxWWiwA1EH58LJqzXEnGsT5eucx9q2w=
+github.com/lovego/slice v0.0.8 h1:Ska4EQTGlouZOfwp2tInf+jOK8iDr2Jqlf4oT5rFKnk=
+github.com/lovego/slice v0.0.8/go.mod h1:C4ahk1h65jGU4T1V6Tg4VBQUx0ORnHuc2owWwr62cNg=
+github.com/lovego/sorted_sets v0.0.2 h1:zL/r4Fv0pYMvv9BVOpVy3qwO/zximlcCGilFy9/JQ8g=
+github.com/lovego/sorted_sets v0.0.2/go.mod h1:FPUIxm0s+jURyGcqpHsDaAXjz661YqkUlbGP0Hwz2Bc=
 github.com/lovego/strs v0.0.0-20200806061622-587de9a27e5c h1:nNif2nzOnIQhoWRjkU3zfa/MZLBaA8mzIfIEpTkc1hI=
 github.com/lovego/strs v0.0.0-20200806061622-587de9a27e5c/go.mod h1:YgXHmoSkZdN/hEzZ0LszKnvz8JHP9oSXbHvkrE/8ZiI=
 github.com/lovego/struct_tag v0.0.0-20200821111615-1a11055a2d31/go.mod h1:2Y5edfo2L39OxqqJqk0w67T136Njegcfi6YeOCbEkng=
