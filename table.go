@@ -19,8 +19,6 @@ type Table struct {
 	// The name of the table to cache, required.
 	Name string
 
-	NoClear bool
-
 	// The struct to receive a table row.
 	RowStruct interface{}
 
@@ -56,7 +54,7 @@ type Table struct {
 }
 
 func (t *Table) Init(table string) {
-	if err := t.Reload(t.NoClear); err != nil {
+	if err := t.Reload(); err != nil {
 		t.Error(err)
 	}
 }
@@ -75,14 +73,14 @@ func (t *Table) Delete(table string, content []byte) {
 }
 
 func (t *Table) ConnLoss(table string) {
-	if err := t.Reload(false); err != nil {
+	if err := t.Reload(); err != nil {
 		t.Error("connection loss: " + err.Error())
 	} else {
 		t.Error("connection loss")
 	}
 }
 
-func (t *Table) Reload(noClear bool) error {
+func (t *Table) Reload() error {
 	var rows = reflect.New(reflect.SliceOf(t.rowStruct)).Elem()
 	start := time.Now()
 	err := t.dbQuerier.Query(rows.Addr().Interface(), t.LoadSql)
@@ -91,9 +89,7 @@ func (t *Table) Reload(noClear bool) error {
 		log.Printf("%s \t%s.%s\n", msg, t.dbName, t.Name)
 		return fmt.Errorf("reload: %v", err)
 	}
-	if !noClear {
-		t.Clear()
-	}
+	t.Clear()
 	t.Save(rows.Interface())
 	log.Printf("%s fullTime: %6v, \t%s.%s\n", msg, time.Since(start).Round(time.Millisecond),
 		t.dbName, t.Name)
