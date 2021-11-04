@@ -64,7 +64,7 @@ func listDbTable(buf *bytes.Buffer, db, table string, cache Cache) int {
 	if _, ok := cache.(interface {
 		Reload(noClear bool) error
 	}); ok {
-		reload = fmt.Sprintf(`<a href="/caches/%s/%s/reload">reload</a>`, db, table)
+		reload = fmt.Sprintf(`<a href="./caches/%s/%s/reload">reload</a>`, db, table)
 	}
 
 	buf.WriteString(fmt.Sprintf(`<td%s>%s</td>
@@ -88,7 +88,7 @@ func listData(db, table string, data Data) string {
 		return `<td></td> <td></td>`
 	}
 	return fmt.Sprintf(
-		`<td class="data"><a href="/caches/%s/%s/%s">%s</a></td> <td>%d</td>`,
+		`<td class="data"><a href="./caches/%s/%s/%s">%s</a></td> <td>%d</td>`,
 		db, table, data.Key(), data.Key(), data.Size(),
 	)
 }
