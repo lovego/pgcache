@@ -6,7 +6,7 @@ require (
 	github.com/lib/pq v1.10.3
 	github.com/lovego/bsql v0.0.8
 	github.com/lovego/errs v0.0.6
-	github.com/lovego/goa v0.2.4
+	github.com/lovego/goa v0.2.6
 	github.com/lovego/logger v0.0.3
 	github.com/lovego/slice v0.0.9 // indirect
 	github.com/lovego/sorted_sets v0.0.2
