@@ -86,12 +86,12 @@ func columnsFromRowStruct(rowStruct reflect.Type, exclude string) string {
 	}
 
 	var result []string
-	structs.TraverseType(rowStruct, func(field reflect.StructField) {
-		if value, ok := struct_tag.Lookup(string(field.Tag), `json`); !ok || value != "-" {
-			column := Field2Column(field.Name)
-			if len(excluding) == 0 || notIn(column, excluding) {
-				result = append(result, column)
-			}
+	structs.TraverseType(rowStruct, func(field reflect.StructField) bool {
+		return struct_tag.Get(string(field.Tag), `json`) == "-"
+	}, func(field reflect.StructField) {
+		column := Field2Column(field.Name)
+		if len(excluding) == 0 || notIn(column, excluding) {
+			result = append(result, column)
 		}
 	})
 	return strings.Join(result, ",")
