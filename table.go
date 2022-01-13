@@ -10,6 +10,7 @@ import (
 	"github.com/lovego/bsql"
 	"github.com/lovego/bsql/scan"
 	"github.com/lovego/pgcache/manage"
+	"github.com/lovego/value"
 )
 
 // A Handler to cache table data.
@@ -176,7 +177,7 @@ func jsonUnmarshal(content []byte, row reflect.Value) error {
 	}
 
 	for k, v := range m {
-		if field := row.FieldByName(scan.Column2Field(k)); field.IsValid() {
+		if field := value.Settable(row, scan.Column2FieldPath(k)); field.IsValid() {
 			if err := json.Unmarshal(v, field.Addr().Interface()); err != nil {
 				return err
 			}
