@@ -16,5 +16,5 @@ require (
 	github.com/lovego/value v0.0.6
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
-	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
